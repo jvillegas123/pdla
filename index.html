@@ -744,7 +744,7 @@
                     this.timerInterval = null;
                 }
                 
-                // SONIDO AUDIBLE INMEDIATO - Sin popup
+                // SONIDO AUDIBLE CONTINUO - SIN POPUP que lo interrumpa
                 if (this.audioActivated) {
                     this.playLongTimerSound();
                 } else {
@@ -762,10 +762,8 @@
                 this.saveState();
                 this.render();
                 
-                // Popup SIN SONIDO después de 2 segundos
-                setTimeout(() => {
-                    alert('⏰ ¡TIEMPO TERMINADO!\n\n🔔 La ronda ha finalizado.');
-                }, 2000);
+                // SIN POPUP - Solo audio continuo por 10 segundos
+                console.log('⏰ TIEMPO TERMINADO - Sonando alarma continua');
             }
 
             // Sonido LARGO Y REPETITIVO para alarma final (10 segundos)
