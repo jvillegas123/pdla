@@ -540,11 +540,86 @@
                 this.render();
             }
 
+            // NUEVO: Inicializar audio con interacción del usuario (OBLIGATORIO para móviles)
+            async startTimerWithSound() {
+                // PASO 1: Activar audio con interacción directa del usuario
+                await this.forceActivateAudio();
+                
+                // PASO 2: Iniciar timer normalmente
+                this.startTimer();
+            }
+
+            // Forzar activación de audio en móviles
+            async forceActivateAudio() {
+                try {
+                    // Crear contexto de audio si no existe
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    // Reanudar contexto si está suspendido
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    
+                    // Reproducir un sonido silencioso para activar el audio
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.001, this.audioContext.currentTime); // Muy bajo para que no se escuche
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    
+                    // Marcar como activado
+                    this.audioActivated = true;
+                    
+                    console.log('✅ Audio activado correctamente para móvil');
+                    
+                } catch (error) {
+                    console.log('❌ Error activando audio:', error);
+                    this.audioActivated = false;
+                }
+            }
+
+            // Botón para probar el sonido
+            async testSound() {
+                await this.forceActivateAudio();
+                
+                // Reproducir sonido de prueba
+                try {
+                    if (this.audioContext) {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                        oscillator.type = 'square';
+                        
+                        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                        
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.5);
+                        
+                        alert('🔊 Si escuchaste el beep, el sonido funcionará correctamente');
+                    }
+                } catch (error) {
+                    alert('❌ Error de sonido. Intenta desde el navegador Chrome.');
+                }
+            }
+
             startTimer() {
                 if (this.isTimerRunning) return;
-                
-                // Activar contexto de audio en el primer toque (requerido por navegadores)
-                this.initializeAudioContext();
                 
                 this.isTimerRunning = true;
                 this.saveState();
@@ -553,8 +628,8 @@
                     if (this.timerSeconds > 0) {
                         this.timerSeconds--;
                         
-                        // Beep de advertencia en los últimos 10 segundos
-                        if (this.timerSeconds <= 10 && this.timerSeconds > 0) {
+                        // Beep de advertencia en los últimos 10 segundos (solo si audio está activado)
+                        if (this.timerSeconds <= 10 && this.timerSeconds > 0 && this.audioActivated) {
                             this.playWarningBeep();
                         }
                         
@@ -584,9 +659,9 @@
                 }
             }
 
-            // Beep de advertencia para los últimos segundos
+            // Beep de advertencia para los últimos segundos (mejorado)
             playWarningBeep() {
-                if (!this.audioContext) return;
+                if (!this.audioContext || !this.audioActivated) return;
                 
                 try {
                     const oscillator = this.audioContext.createOscillator();
@@ -596,9 +671,9 @@
                     gainNode.connect(this.audioContext.destination);
                     
                     oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
-                    oscillator.type = 'sine';
+                    oscillator.type = 'square';
                     
-                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
                     gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
                     
                     oscillator.start(this.audioContext.currentTime);
@@ -636,30 +711,41 @@
                     this.timerInterval = null;
                 }
                 
-                // SONIDO AUDIBLE - Crear beeps con Web Audio API
-                this.playTimerSound();
+                // SONIDO AUDIBLE - Solo si está activado
+                if (this.audioActivated) {
+                    this.playTimerSound();
+                } else {
+                    // Si no hay audio, hacer vibración más intensa
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([1000, 300, 1000, 300, 1000, 300, 1000]);
+                    }
+                    console.log('⚠️ Audio no activado - solo vibración');
+                }
                 
                 // Vibración en móviles
                 if ('vibrate' in navigator) {
                     navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
                 }
                 
-                // Alerta visual
-                alert('⏰ ¡TIEMPO TERMINADO!\n\n🔔 La ronda ha finalizado.');
+                // Alerta visual MÁS VISIBLE
+                setTimeout(() => {
+                    alert('⏰🚨 ¡TIEMPO TERMINADO! 🚨⏰\n\n🔔 La ronda ha finalizado.\n\n💡 Tip: Usa "Test Sonido" antes de iniciar para verificar audio.');
+                }, 100);
                 
                 this.saveState();
                 this.render();
             }
 
-            // Función para crear sonido audible
+            // Función para crear sonido audible (mejorada para móviles)
             playTimerSound() {
+                if (!this.audioContext || !this.audioActivated) {
+                    console.log('⚠️ Audio no disponible');
+                    return;
+                }
+                
                 try {
-                    if (!this.audioContext) {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-                    
                     // Función para crear un beep
-                    const createBeep = (frequency, duration, delay, volume = 0.3) => {
+                    const createBeep = (frequency, duration, delay, volume = 0.4) => {
                         setTimeout(() => {
                             const oscillator = this.audioContext.createOscillator();
                             const gainNode = this.audioContext.createGain();
@@ -678,16 +764,16 @@
                         }, delay);
                     };
                     
-                    // Crear secuencia de beeps URGENTES y AUDIBLES
-                    createBeep(1000, 0.3, 0, 0.5);     // Beep 1 - fuerte y agudo
-                    createBeep(800, 0.3, 400, 0.5);    // Beep 2 
-                    createBeep(1000, 0.3, 800, 0.5);   // Beep 3
-                    createBeep(1200, 0.8, 1200, 0.6);  // Beep final - MUY fuerte y largo
+                    // Crear secuencia de beeps MUY AUDIBLES
+                    createBeep(1000, 0.4, 0, 0.6);     // Beep 1 - MUY fuerte
+                    createBeep(800, 0.4, 500, 0.6);    // Beep 2 
+                    createBeep(1000, 0.4, 1000, 0.6);  // Beep 3
+                    createBeep(1200, 1.0, 1500, 0.7);  // Beep final - EXTRA fuerte y largo
+                    
+                    console.log('🔊 Reproduciendo sonido de alarma');
                     
                 } catch (error) {
-                    console.log('Error al reproducir sonido:', error);
-                    // Fallback 1: Intentar con síntesis de voz
-                    this.playVoiceAlert();
+                    console.log('❌ Error al reproducir sonido:', error);
                 }
             }
 
@@ -1111,8 +1197,8 @@
                                     
                                     <div class="flex-center" style="gap:10px">
                                         ${!this.isTimerRunning ? `
-                                            <button class="padel-button btn-secondary" onclick="padelApp.startTimer()">
-                                                ▶️ Iniciar
+                                            <button class="padel-button btn-secondary" onclick="padelApp.startTimerWithSound()">
+                                                ▶️ Iniciar Timer
                                             </button>
                                         ` : `
                                             <button class="padel-button btn-danger" onclick="padelApp.pauseTimer()">
@@ -1121,6 +1207,9 @@
                                         `}
                                         <button class="padel-button btn-primary" onclick="padelApp.resetTimer()">
                                             🔄 Reiniciar
+                                        </button>
+                                        <button class="padel-button" style="background:#ff9800;color:white;font-size:14px;padding:10px 15px" onclick="padelApp.testSound()">
+                                            🔊 Test Sonido
                                         </button>
                                     </div>
                                 </div>
