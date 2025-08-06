@@ -88,9 +88,9 @@
             transform: none;
         }
         
-        .btn-primary { background-color: #6f2c91; color: white; }
-        .btn-secondary { background-color: #00a650; color: white; }
-        .btn-danger { background-color: #d63384; color: white; }
+        .btn-primary { background-color: #6f2c91 !important; color: white !important; }
+        .btn-secondary { background-color: #00a650 !important; color: white !important; }
+        .btn-danger { background-color: #d63384 !important; color: white !important; }
         
         .padel-court { 
             background-color: #1E69EA; 
@@ -578,8 +578,29 @@
                 // PASO 1: Activar audio con interacción directa del usuario
                 await this.forceActivateAudio();
                 
-                // PASO 2: Iniciar timer normalmente
+                // PASO 2: Para iOS - forzar reproducción de sonido dummy
+                this.ensureiOSAudioWorks();
+                
+                // PASO 3: Iniciar timer normalmente
                 this.startTimer();
+            }
+
+            // Específico para iOS - asegurar que el audio funcione
+            ensureiOSAudioWorks() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (isIOS && this.audioContext) {
+                    try {
+                        // Crear un sonido silencioso para iOS
+                        const buffer = this.audioContext.createBuffer(1, 1, 22050);
+                        const source = this.audioContext.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(this.audioContext.destination);
+                        source.start(0);
+                        console.log('🍎 Audio preparado para iOS');
+                    } catch (error) {
+                        console.log('⚠️ No se pudo preparar audio para iOS');
+                    }
+                }
             }
 
             // Forzar activación de audio en móviles
@@ -622,9 +643,12 @@
                 }
             }
 
-            // Botón para probar el sonido
+            // Botón para probar el sonido (mejorado para iOS)
             async testSound() {
                 await this.forceActivateAudio();
+                
+                // Detectar iOS
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                 
                 // Reproducir sonido de prueba
                 try {
@@ -644,10 +668,18 @@
                         oscillator.start(this.audioContext.currentTime);
                         oscillator.stop(this.audioContext.currentTime + 0.5);
                         
-                        alert('🔊 Si escuchaste el beep, el sonido funcionará correctamente');
+                        if (isIOS) {
+                            alert('🍎 iOS detectado - Si escuchaste el beep, funcionará. Si no, usa Safari en lugar de Chrome.');
+                        } else {
+                            alert('🔊 Si escuchaste el beep, el sonido funcionará correctamente');
+                        }
                     }
                 } catch (error) {
-                    alert('❌ Error de sonido. Intenta desde el navegador Chrome.');
+                    if (isIOS) {
+                        alert('❌ iOS: Intenta usar Safari o agregar la app a pantalla de inicio');
+                    } else {
+                        alert('❌ Error de sonido. Intenta desde el navegador Chrome.');
+                    }
                 }
             }
 
@@ -1153,9 +1185,9 @@
                                                        style="flex:1" 
                                                        onchange="padelApp.updatePlayer(${index}, this.value)">
                                                 ${this.players.length > 4 ? `
-                                                    <button class="padel-button btn-danger" 
-                                                            onclick="padelApp.removePlayer(${index})" 
-                                                            style="padding:12px">❌</button>
+                                                    <button class="padel-button" 
+                                                            style="background:#ffffff;color:#6f2c91;border:2px solid #6f2c91;padding:12px;font-weight:bold"
+                                                            onclick="padelApp.removePlayer(${index})">✕</button>
                                                 ` : ''}
                                             </div>
                                         `).join('')}
