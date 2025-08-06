@@ -281,6 +281,11 @@
             cursor: pointer;
         }
         
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
         @media (max-width: 768px) { 
             .grid-2 { 
                 grid-template-columns: 1fr;
@@ -371,11 +376,7 @@
             window.addEventListener('load', function() {
                 const swCode = `
                     const CACHE_NAME = 'padel-americano-v1';
-                    const urlsToCache = [
-                        '/',
-                        '/index.html',
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9IiM2ZjJjOTEiPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjcwIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+OvjwvdGV4dD48L3N2Zz4='
-                    ];
+                    const urlsToCache = ['/'];
                     
                     self.addEventListener('install', function(event) {
                         event.waitUntil(
@@ -417,7 +418,6 @@
         let deferredPrompt;
         
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('beforeinstallprompt event fired');
             e.preventDefault();
             deferredPrompt = e;
             showInstallPrompt();
@@ -437,11 +437,6 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('Usuario aceptó la instalación');
-                    } else {
-                        console.log('Usuario rechazó la instalación');
-                    }
                     deferredPrompt = null;
                 });
             }
@@ -460,15 +455,13 @@
             window.installDismissed = value;
         }
         
-        // Detección manual de PWA installable
         setTimeout(() => {
             if (!deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
-                // Mostrar prompt manual si no se disparó automáticamente
                 showInstallPrompt();
             }
         }, 3000);
 
-        // Clase principal de la aplicación
+        // Clase principal CON TIMER COMPLETO
         class PadelAmericano {
             constructor() {
                 this.stage = 'setup';
@@ -477,6 +470,11 @@
                 this.rounds = [];
                 this.currentRound = 0;
                 this.leaderboard = [];
+                // TIMER PROPERTIES
+                this.timerMinutes = 10;
+                this.timerSeconds = 600;
+                this.timerInterval = null;
+                this.isTimerRunning = false;
                 this.init();
             }
 
@@ -493,7 +491,10 @@
                         numCourts: this.numCourts,
                         rounds: this.rounds,
                         currentRound: this.currentRound,
-                        leaderboard: this.leaderboard
+                        leaderboard: this.leaderboard,
+                        timerMinutes: this.timerMinutes,
+                        timerSeconds: this.timerSeconds,
+                        isTimerRunning: this.isTimerRunning
                     };
                     window.padelState = state;
                 } catch (e) {
@@ -511,11 +512,94 @@
                         this.rounds = state.rounds || [];
                         this.currentRound = state.currentRound || 0;
                         this.leaderboard = state.leaderboard || [];
+                        this.timerMinutes = state.timerMinutes || 10;
+                        this.timerSeconds = state.timerSeconds || 600;
+                        this.isTimerRunning = state.isTimerRunning || false;
                         this.render();
                     }
                 } catch (e) {
                     console.log('No se pudo cargar el estado');
                 }
+            }
+
+            // TIMER METHODS
+            updateTimerMinutes(minutes) {
+                if (!this.isTimerRunning) {
+                    this.timerMinutes = parseInt(minutes) || 10;
+                    this.timerSeconds = this.timerMinutes * 60;
+                    this.saveState();
+                    this.render();
+                }
+            }
+
+            resetTimer() {
+                this.stopTimer();
+                this.timerSeconds = this.timerMinutes * 60;
+                this.isTimerRunning = false;
+                this.saveState();
+                this.render();
+            }
+
+            startTimer() {
+                if (this.isTimerRunning) return;
+                
+                this.isTimerRunning = true;
+                this.saveState();
+                
+                this.timerInterval = setInterval(() => {
+                    if (this.timerSeconds > 0) {
+                        this.timerSeconds--;
+                        this.saveState();
+                        this.render();
+                    } else {
+                        this.timerFinished();
+                    }
+                }, 1000);
+                
+                this.render();
+            }
+
+            pauseTimer() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                this.saveState();
+                this.render();
+            }
+
+            stopTimer() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                this.timerSeconds = this.timerMinutes * 60;
+                this.saveState();
+                this.render();
+            }
+
+            timerFinished() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([500, 200, 500, 200, 500]);
+                }
+                
+                alert('⏰ ¡Tiempo terminado!\n\nLa ronda ha finalizado.');
+                this.saveState();
+                this.render();
+            }
+
+            formatTime(totalSeconds) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
 
             addPlayer() { 
@@ -592,7 +676,8 @@
                 
                 this.rounds = this.generateTournament(validPlayers, this.numCourts);
                 this.currentRound = 0; 
-                this.stage = 'playing'; 
+                this.stage = 'playing';
+                this.resetTimer();
                 this.saveState();
                 this.render();
             }
@@ -689,7 +774,8 @@
 
             nextRound() { 
                 if (this.currentRound < this.rounds.length - 1) { 
-                    this.currentRound++; 
+                    this.currentRound++;
+                    this.resetTimer();
                     this.saveState();
                     this.render(); 
                 } 
@@ -697,7 +783,8 @@
             
             prevRound() { 
                 if (this.currentRound > 0) { 
-                    this.currentRound--; 
+                    this.currentRound--;
+                    this.resetTimer();
                     this.saveState();
                     this.render(); 
                 } 
@@ -706,6 +793,7 @@
             finishTournament() { 
                 this.calculateLeaderboard(); 
                 this.stage = 'finished'; 
+                this.stopTimer();
                 this.saveState();
                 this.render(); 
             }
@@ -716,6 +804,7 @@
                 this.currentRound = 0;
                 this.stage = 'playing';
                 this.leaderboard = [];
+                this.resetTimer();
                 this.saveState();
                 this.render();
             }
@@ -726,7 +815,9 @@
                 this.numCourts = 1; 
                 this.rounds = []; 
                 this.currentRound = 0; 
-                this.leaderboard = []; 
+                this.leaderboard = [];
+                this.timerMinutes = 10;
+                this.resetTimer();
                 this.saveState();
                 this.render(); 
             }
@@ -831,6 +922,48 @@
                         <div style="max-width:1200px;margin:0 auto">
                             <div class="text-center" style="margin-bottom:30px">
                                 <h1 class="padel-title">Ronda ${this.currentRound + 1} de ${this.rounds.length}</h1>
+                                
+                                <!-- TIMER SECTION -->
+                                <div class="padel-card" style="margin-bottom:20px">
+                                    <h3 style="color:#6f2c91;margin-bottom:15px;font-size:1.2rem">⏱️ Timer de Ronda</h3>
+                                    
+                                    <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:20px;flex-wrap:wrap">
+                                        <div style="display:flex;align-items:center;gap:10px">
+                                            <label style="color:#6f2c91;font-weight:bold">Duración:</label>
+                                            <input type="number" 
+                                                   min="1" max="60" 
+                                                   value="${this.timerMinutes}" 
+                                                   style="width:60px;padding:5px;border:2px solid #00a650;border-radius:5px;text-align:center;font-size:16px"
+                                                   onchange="padelApp.updateTimerMinutes(this.value)"
+                                                   ${this.isTimerRunning ? 'disabled' : ''}>
+                                            <span style="color:#6f2c91;font-weight:bold">min</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="text-align:center;margin-bottom:20px">
+                                        <div style="font-size:3rem;font-weight:bold;color:${this.timerSeconds <= 60 ? '#d63384' : '#6f2c91'};margin-bottom:10px;font-family:monospace">
+                                            ${this.formatTime(this.timerSeconds)}
+                                        </div>
+                                        ${this.timerSeconds <= 60 && this.timerSeconds > 0 ? '<div style="color:#d63384;font-weight:bold;animation:blink 1s infinite">⚠️ ¡Último minuto!</div>' : ''}
+                                        ${this.timerSeconds === 0 ? '<div style="color:#d63384;font-weight:bold;font-size:1.2rem">⏰ ¡Tiempo terminado!</div>' : ''}
+                                    </div>
+                                    
+                                    <div class="flex-center" style="gap:10px">
+                                        ${!this.isTimerRunning ? `
+                                            <button class="padel-button btn-secondary" onclick="padelApp.startTimer()">
+                                                ▶️ Iniciar
+                                            </button>
+                                        ` : `
+                                            <button class="padel-button btn-danger" onclick="padelApp.pauseTimer()">
+                                                ⏸️ Pausar
+                                            </button>
+                                        `}
+                                        <button class="padel-button btn-primary" onclick="padelApp.resetTimer()">
+                                            🔄 Reiniciar
+                                        </button>
+                                    </div>
+                                </div>
+                                
                                 <div class="flex-center" style="margin-bottom:20px">
                                     <button class="padel-button btn-primary" 
                                             onclick="padelApp.prevRound()" 
@@ -1062,4 +1195,3 @@
     </script>
 </body>
 </html>
-                                                       
