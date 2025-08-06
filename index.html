@@ -711,15 +711,14 @@
                     this.timerInterval = null;
                 }
                 
-                // SONIDO AUDIBLE - Solo si está activado
+                // SONIDO AUDIBLE INMEDIATO - Sin popup
                 if (this.audioActivated) {
-                    this.playTimerSound();
+                    this.playLongTimerSound();
                 } else {
                     // Si no hay audio, hacer vibración más intensa
                     if ('vibrate' in navigator) {
                         navigator.vibrate([1000, 300, 1000, 300, 1000, 300, 1000]);
                     }
-                    console.log('⚠️ Audio no activado - solo vibración');
                 }
                 
                 // Vibración en móviles
@@ -727,26 +726,31 @@
                     navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
                 }
                 
-                // Alerta visual MÁS VISIBLE
-                setTimeout(() => {
-                    alert('⏰🚨 ¡TIEMPO TERMINADO! 🚨⏰\n\n🔔 La ronda ha finalizado.\n\n💡 Tip: Usa "Test Sonido" antes de iniciar para verificar audio.');
-                }, 100);
-                
                 this.saveState();
                 this.render();
+                
+                // Popup SIN SONIDO después de 2 segundos
+                setTimeout(() => {
+                    alert('⏰ ¡TIEMPO TERMINADO!\n\n🔔 La ronda ha finalizado.');
+                }, 2000);
             }
 
-            // Función para crear sonido audible (mejorada para móviles)
-            playTimerSound() {
+            // Sonido LARGO Y REPETITIVO para alarma final (10 segundos)
+            playLongTimerSound() {
                 if (!this.audioContext || !this.audioActivated) {
                     console.log('⚠️ Audio no disponible');
                     return;
                 }
                 
                 try {
-                    // Función para crear un beep
-                    const createBeep = (frequency, duration, delay, volume = 0.4) => {
-                        setTimeout(() => {
+                    // Función para crear beeps continuos
+                    const createContinuousBeep = (frequency, beepDuration, pauseDuration, totalDuration, volume = 0.5) => {
+                        let elapsed = 0;
+                        const interval = beepDuration + pauseDuration;
+                        
+                        const playBeep = () => {
+                            if (elapsed >= totalDuration) return;
+                            
                             const oscillator = this.audioContext.createOscillator();
                             const gainNode = this.audioContext.createGain();
                             
@@ -754,23 +758,29 @@
                             gainNode.connect(this.audioContext.destination);
                             
                             oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-                            oscillator.type = 'square'; // Sonido más penetrante
+                            oscillator.type = 'square';
                             
                             gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
-                            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + beepDuration);
                             
                             oscillator.start(this.audioContext.currentTime);
-                            oscillator.stop(this.audioContext.currentTime + duration);
-                        }, delay);
+                            oscillator.stop(this.audioContext.currentTime + beepDuration);
+                            
+                            elapsed += interval;
+                            
+                            // Programar siguiente beep
+                            if (elapsed < totalDuration) {
+                                setTimeout(playBeep, interval * 1000);
+                            }
+                        };
+                        
+                        playBeep();
                     };
                     
-                    // Crear secuencia de beeps MUY AUDIBLES
-                    createBeep(1000, 0.4, 0, 0.6);     // Beep 1 - MUY fuerte
-                    createBeep(800, 0.4, 500, 0.6);    // Beep 2 
-                    createBeep(1000, 0.4, 1000, 0.6);  // Beep 3
-                    createBeep(1200, 1.0, 1500, 0.7);  // Beep final - EXTRA fuerte y largo
+                    // ALARMA CONTINUA por 10 segundos: BIIIIP-pausa-BIIIIP-pausa...
+                    createContinuousBeep(1000, 0.8, 0.3, 10, 0.6); // 10 segundos de beeps
                     
-                    console.log('🔊 Reproduciendo sonido de alarma');
+                    console.log('🚨 Reproduciendo alarma continua por 10 segundos');
                     
                 } catch (error) {
                     console.log('❌ Error al reproducir sonido:', error);
@@ -1208,7 +1218,7 @@
                                         <button class="padel-button btn-primary" onclick="padelApp.resetTimer()">
                                             🔄 Reiniciar
                                         </button>
-                                        <button class="padel-button" style="background:#ff9800;color:white;font-size:14px;padding:10px 15px" onclick="padelApp.testSound()">
+                                        <button class="padel-button" style="background:#007bff;color:white;font-size:14px;padding:10px 15px" onclick="padelApp.testSound()">
                                             🔊 Test Sonido
                                         </button>
                                     </div>
