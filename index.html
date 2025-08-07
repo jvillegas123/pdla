@@ -499,7 +499,7 @@
             constructor() {
                 this.stage = 'setup';
                 this.players = ['', '', '', '', '', '', '', ''];
-                this.numCourts = 1;
+                this.numCourts = 0;
                 this.rounds = [];
                 this.currentRound = 0;
                 this.leaderboard = [];
@@ -541,14 +541,14 @@
                     if (state) {
                         this.stage = state.stage || 'setup';
                         this.players = state.players || ['', '', '', '', '', '', '', ''];
-                        this.numCourts = state.numCourts || 1;
+                        this.numCourts = state.numCourts || 0;
                         this.rounds = state.rounds || [];
                         this.currentRound = state.currentRound || 0;
                         this.leaderboard = state.leaderboard || [];
                         this.timerMinutes = state.timerMinutes || 10;
                         this.timerSeconds = state.timerSeconds || 600;
                         this.isTimerRunning = state.isTimerRunning || false;
-                        this.render();
+                        this.adjustCourtsForPlayers();
                     }
                 } catch (e) {
                     console.log('No se pudo cargar el estado');
@@ -775,7 +775,7 @@
                     clearInterval(this.timerInterval);
                     this.timerInterval = null;
                 }
-                
+
                 // SONIDO AUDIBLE CONTINUO - SIN POPUP que lo interrumpa
                 if (this.audioActivated) {
                     this.playLongTimerSound();
@@ -924,6 +924,7 @@
 
             addPlayer() { 
                 this.players.push(''); 
+                this.adjustCourtsForPlayers();
                 this.saveState();
                 this.render(); 
             }
@@ -931,6 +932,7 @@
             removePlayer(index) { 
                 if (this.players.length > 4) { 
                     this.players.splice(index, 1); 
+                    this.adjustCourtsForPlayers();
                     this.saveState();
                     this.render(); 
                 } 
@@ -938,13 +940,34 @@
 
             updatePlayer(index, name) { 
                 this.players[index] = name; 
+                this.adjustCourtsForPlayers();
                 this.saveState();
             }
 
             updateCourts(value) { 
-                this.numCourts = parseInt(value) || 1; 
+                this.numCourts = parseInt(value) || 0; 
                 this.saveState();
                 this.render(); 
+            }
+
+            // Nueva función para ajustar automáticamente las canchas según jugadores
+            adjustCourtsForPlayers() {
+                const validCount = this.players.filter(p => p.trim() !== '').length;
+                
+                // Si hay 4-7 jugadores, forzar 1 cancha
+                if (validCount >= 4 && validCount <= 7) {
+                    if (this.numCourts !== 1) {
+                        this.numCourts = 1;
+                        this.saveState();
+                    }
+                }
+                // Si hay 8+ jugadores, permitir más canchas pero mínimo 1
+                else if (validCount >= 8) {
+                    if (this.numCourts < 1) {
+                        this.numCourts = 1;
+                        this.saveState();
+                    }
+                }
             }
 
             generateTournament(playerList, courts) {
@@ -1155,7 +1178,9 @@
 
             renderSetup(app) {
                 const validCount = this.players.filter(p => p.trim() !== '').length;
-                const isValid = validCount >= 4 && validCount % 2 === 0;
+                const isValid = validCount >= 4 && validCount % 2 === 0 && this.numCourts >= 1;
+                
+
                 
                 app.innerHTML = `
                     <div class="padel-container">
@@ -1208,10 +1233,16 @@
                                             Número de canchas disponibles
                                         </label>
                                         <input type="number" 
-                                               min="1" max="10" 
+                                               min="0" max="10" 
                                                value="${this.numCourts}" 
                                                class="padel-input" 
-                                               onchange="padelApp.updateCourts(this.value)">
+                                               onchange="padelApp.updateCourts(this.value)"
+                                               ${validCount >= 4 && validCount <= 7 ? 'disabled' : ''}>
+                                        ${validCount >= 4 && validCount <= 7 ? `
+                                            <small style="color:#6f2c91;font-style:italic;display:block;margin-top:5px">
+                                                ⚠️ Con ${validCount} jugadores solo se permite 1 cancha
+                                            </small>
+                                        ` : ''}
                                     </div>
                                     
                                     <div style="background:#f8f9fa;border-left:4px solid #00a650;padding:15px;border-radius:8px;margin-bottom:20px">
