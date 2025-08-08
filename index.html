@@ -1,736 +1,1653 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6f2c91">
-  <title>Pádel Americano</title>
-
-  <!-- PWA Meta Tags -->
-  <link rel="manifest" href="#" id="manifest-placeholder">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Pádel Americano">
-
-  <!-- Favicon -->
-  <link rel="icon" href="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png">
-  <link rel="apple-touch-icon" href="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png">
-
-  <style>
-    .padel-container { 
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
-      min-height: 100vh; 
-      padding: 20px; 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      -webkit-user-select: none;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .padel-card { 
-      background: white; 
-      border: 2px solid #00a650; 
-      border-radius: 15px; 
-      padding: 30px; 
-      margin-bottom: 20px; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    .padel-title { color: #6f2c91; font-size: 2.5rem; font-weight: bold; text-align: center; margin-bottom: 10px; }
-    .padel-subtitle { color: #6f2c91; text-align: center; margin-bottom: 30px; }
-    .padel-input { width: 100%; padding: 15px; border: 2px solid #00a650; border-radius: 8px; font-size: 18px; margin-bottom: 10px; -webkit-appearance: none; appearance: none; box-sizing: border-box; }
-    .padel-button { padding: 15px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 18px; transition: all 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; min-height: 48px; box-sizing: border-box; }
-    .padel-button:hover, .padel-button:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .padel-button:disabled { background-color: #6c757d !important; cursor: not-allowed; opacity: 0.6; transform: none; }
-    .btn-primary { background-color: #6f2c91 !important; color: white !important; }
-    .btn-secondary { background-color: #00a650 !important; color: white !important; }
-    .btn-danger { background-color: #d63384 !important; color: white !important; }
-    .padel-court { background-color: #1E69EA; border: 4px solid white; border-radius: 15px; padding: 30px; position: relative; height: 220px; margin: 20px 0; box-shadow: inset 0 0 20px rgba(0,0,0,0.2); }
-    .court-lines { position: absolute; top: 15px; bottom: 15px; left: 15px; right: 15px; border: 2px solid rgba(255,255,255,0.8); border-radius: 5px; }
-    .court-center-line { position: absolute; top: 15px; bottom: 15px; left: 50%; width: 2px; background: rgba(255,255,255,0.8); transform: translateX(-50%); }
-    .court-net { position: absolute; top: 50%; left: 50%; width: 50px; height: 2px; background: rgba(255,255,255,0.8); transform: translate(-50%, -50%); }
-    .team-area { position: absolute; top: 50%; width: 45%; transform: translateY(-50%); text-align: center; z-index: 10; }
-    .team-left { left: 5%; } .team-right { right: 5%; }
-    .team-names { background: rgba(255,255,255,0.95); border: 2px solid #6f2c91; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .team-name { font-weight: bold; color: #6f2c91; font-size: 16px; }
-    .score-input { width: 80px; height: 70px; text-align: center; border: 4px solid white; border-radius: 15px; font-size: 32px; font-weight: bold; color: #6f2c91; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); -webkit-appearance: none; appearance: none; }
-    .score-input:disabled { background-color: #f5f5f5; color: #999; }
-    .vs-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.95); border: 2px solid #6f2c91; border-radius: 50px; padding: 8px 16px; font-weight: bold; color: #6f2c91; font-size: 14px; z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .flex-center { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-    .text-center { text-align: center; }
-    .leaderboard-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 16px; }
-    .leaderboard-table th { background-color: #6f2c91; color: white; padding: 15px 12px; text-align: left; font-weight: bold; }
-    .leaderboard-table td { padding: 15px 12px; border-bottom: 1px solid #ddd; }
-    .leaderboard-table tr:nth-child(even) { background-color: #f8f9fa; }
-    .rank-1 { color: #ffd700; font-size: 20px; } .rank-2 { color: #c0c0c0; font-size: 18px; } .rank-3 { color: #cd7f32; font-size: 18px; }
-    .podium { display: flex; justify-content: center; align-items: end; gap: 20px; margin: 40px 0; }
-    .podium-place { text-align: center; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); min-width: 150px; }
-    .install-prompt { position: fixed; bottom: 20px; left: 20px; right: 20px; background: #6f2c91; color: white; padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: none; }
-    .install-prompt button { background: white; color: #6f2c91; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin: 0 10px; cursor: pointer; }
-    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
-    @media (max-width: 768px) {
-      .grid-2 { grid-template-columns: 1fr; }
-      .podium { flex-direction: column; align-items: center; }
-      .padel-card { padding: 20px; margin-bottom: 15px; }
-      .padel-title { font-size: 2rem; }
-      .padel-court { height: 200px; padding: 20px; }
-      .team-names { padding: 10px; }
-      .team-name { font-size: 14px; }
-      .score-input { width: 70px; height: 60px; font-size: 28px; }
-      .leaderboard-table { font-size: 14px; }
-      .leaderboard-table th, .leaderboard-table td { padding: 10px 8px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6f2c91">
+    <title>Pádel Americano</title>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="#" id="manifest-placeholder">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Pádel Americano">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png">
+    <link rel="apple-touch-icon" href="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png">
+    
+    <style>
+        .padel-container { 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
+            min-height: 100vh; 
+            padding: 20px; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .padel-card { 
+            background: white; 
+            border: 2px solid #00a650; 
+            border-radius: 15px; 
+            padding: 30px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .padel-title { 
+            color: #6f2c91; 
+            font-size: 2.5rem; 
+            font-weight: bold; 
+            text-align: center; 
+            margin-bottom: 10px;
+        }
+        
+        .padel-subtitle { 
+            color: #6f2c91; 
+            text-align: center; 
+            margin-bottom: 30px;
+        }
+        
+        .padel-input { 
+            width: 100%; 
+            padding: 15px;
+            border: 2px solid #00a650; 
+            border-radius: 8px; 
+            font-size: 18px;
+            margin-bottom: 10px;
+            -webkit-appearance: none;
+            appearance: none;
+            box-sizing: border-box;
+        }
+        
+        .padel-button { 
+            padding: 15px 24px;
+            border: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 18px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+        
+        .padel-button:hover, .padel-button:active { 
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .padel-button:disabled { 
+            background-color: #6c757d !important; 
+            cursor: not-allowed; 
+            opacity: 0.6;
+            transform: none;
+        }
+        
+        .btn-primary { background-color: #6f2c91 !important; color: white !important; }
+        .btn-secondary { background-color: #00a650 !important; color: white !important; }
+        .btn-danger { background-color: #d63384 !important; color: white !important; }
+        
+        .padel-court { 
+            background-color: #1E69EA; 
+            border: 4px solid white; 
+            border-radius: 15px; 
+            padding: 30px; 
+            position: relative; 
+            height: 220px;
+            margin: 20px 0; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+        
+        .court-lines { 
+            position: absolute; 
+            top: 15px; 
+            bottom: 15px; 
+            left: 15px; 
+            right: 15px; 
+            border: 2px solid rgba(255,255,255,0.8); 
+            border-radius: 5px;
+        }
+        
+        .court-center-line { 
+            position: absolute; 
+            top: 15px; 
+            bottom: 15px; 
+            left: 50%; 
+            width: 2px; 
+            background: rgba(255,255,255,0.8); 
+            transform: translateX(-50%);
+        }
+        
+        .court-net { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            width: 50px; 
+            height: 2px; 
+            background: rgba(255,255,255,0.8); 
+            transform: translate(-50%, -50%);
+        }
+        
+        .team-area { 
+            position: absolute; 
+            top: 50%; 
+            width: 45%; 
+            transform: translateY(-50%); 
+            text-align: center; 
+            z-index: 10;
+        }
+        
+        .team-left { left: 5%; }
+        .team-right { right: 5%; }
+        
+        .team-names { 
+            background: rgba(255,255,255,0.95); 
+            border: 2px solid #6f2c91; 
+            border-radius: 10px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .team-name { 
+            font-weight: bold; 
+            color: #6f2c91; 
+            font-size: 16px;
+        }
+        
+        .score-input { 
+            width: 80px; 
+            height: 70px;
+            text-align: center; 
+            border: 4px solid white; 
+            border-radius: 15px; 
+            font-size: 32px;
+            font-weight: bold; 
+            color: #6f2c91; 
+            background: white; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .score-input:disabled { 
+            background-color: #f5f5f5; 
+            color: #999;
+        }
+        
+        .vs-badge { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: rgba(255,255,255,0.95); 
+            border: 2px solid #6f2c91; 
+            border-radius: 50px; 
+            padding: 8px 16px; 
+            font-weight: bold; 
+            color: #6f2c91; 
+            font-size: 14px; 
+            z-index: 20; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .grid-2 { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px;
+        }
+        
+        .flex-center { 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            flex-wrap: wrap;
+        }
+        
+        .text-center { text-align: center; }
+        
+        .leaderboard-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            font-size: 16px;
+        }
+        
+        .leaderboard-table th { 
+            background-color: #6f2c91; 
+            color: white; 
+            padding: 15px 12px;
+            text-align: left; 
+            font-weight: bold;
+        }
+        
+        .leaderboard-table td { 
+            padding: 15px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .leaderboard-table tr:nth-child(even) { 
+            background-color: #f8f9fa;
+        }
+        
+        .rank-1 { color: #ffd700; font-size: 20px; }
+        .rank-2 { color: #c0c0c0; font-size: 18px; }
+        .rank-3 { color: #cd7f32; font-size: 18px; }
+        
+        .podium { 
+            display: flex; 
+            justify-content: center; 
+            align-items: end; 
+            gap: 20px; 
+            margin: 40px 0;
+        }
+        
+        .podium-place { 
+            text-align: center; 
+            padding: 20px; 
+            background: white; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            min-width: 150px;
+        }
+        
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: #6f2c91;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .install-prompt button {
+            background: white;
+            color: #6f2c91;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        @media (max-width: 768px) { 
+            .grid-2 { 
+                grid-template-columns: 1fr;
+            }
+            
+            .podium { 
+                flex-direction: column; 
+                align-items: center;
+            }
+            
+            .padel-card {
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .padel-title {
+                font-size: 2rem;
+            }
+            
+            .padel-court {
+                height: 200px;
+                padding: 20px;
+            }
+            
+            .team-names {
+                padding: 10px;
+            }
+            
+            .team-name {
+                font-size: 14px;
+            }
+            
+            .score-input {
+                width: 70px;
+                height: 60px;
+                font-size: 28px;
+            }
+            
+            .leaderboard-table {
+                font-size: 14px;
+            }
+            
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="padel-americano-app"></div>
+    <div id="padel-americano-app"></div>
+    
+    <div id="install-prompt" class="install-prompt">
+        <p>📱 ¡Instala la app en tu teléfono!</p>
+        <button onclick="installApp()">Instalar</button>
+        <button onclick="dismissInstall()">Ahora no</button>
+    </div>
 
-  <div id="install-prompt" class="install-prompt">
-    <p>📱 ¡Instala la app en tu teléfono!</p>
-    <button onclick="installApp()">Instalar</button>
-    <button onclick="dismissInstall()">Ahora no</button>
-  </div>
-
-  <script>
-    // Manifest dinámico
-    const manifestData = {
-      name: "Pádel Americano", short_name: "Pádel", start_url: ".", display: "standalone",
-      background_color: "#f8f9fa", theme_color: "#6f2c91",
-      icons: [
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "72x72", type: "image/png", purpose: "any" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "96x96", type: "image/png", purpose: "any" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "128x128", type: "image/png", purpose: "any" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "144x144", type: "image/png", purpose: "any" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "152x152", type: "image/png", purpose: "any" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
-        { src: "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
-      ]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    document.getElementById('manifest-placeholder').href = manifestURL;
-
-    // Service Worker básico
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        const swCode = `
-          const CACHE_NAME = 'padel-americano-v1';
-          const urlsToCache = ['/'];
-          self.addEventListener('install', e => {
-            e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache)));
-          });
-          self.addEventListener('fetch', e => {
-            e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-          });
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(()=>{});
-      });
-    }
-
-    // Install prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallPrompt(); });
-    function showInstallPrompt(){ const el=document.getElementById('install-prompt'); if(el && !getInstallDismissed()) el.style.display='block'; }
-    function installApp(){ const el=document.getElementById('install-prompt'); el.style.display='none'; if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.finally(()=>{deferredPrompt=null}); } }
-    function dismissInstall(){ document.getElementById('install-prompt').style.display='none'; setInstallDismissed(true); }
-    function getInstallDismissed(){ return window.installDismissed || false; }
-    function setInstallDismissed(v){ window.installDismissed = v; }
-    setTimeout(()=>{ if(!deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) showInstallPrompt(); }, 3000);
-
-    // Clase principal
-    class PadelAmericano {
-      constructor() {
-        this.stage = 'setup';
-        this.players = ['', '', '', '', '', '', '', ''];
-        this.numCourts = 0;
-        this.rounds = [];
-        this.currentRound = 0;
-        this.leaderboard = [];
-        // TIMER
-        this.timerMinutes = 10;
-        this.timerSeconds = 600;
-        this.timerInterval = null;
-        this.isTimerRunning = false;
-        this.init();
-      }
-
-      init(){ this.loadState(); this.render(); }
-      saveState(){
-        try{
-          window.padelState = {
-            stage:this.stage, players:this.players, numCourts:this.numCourts,
-            rounds:this.rounds, currentRound:this.currentRound, leaderboard:this.leaderboard,
-            timerMinutes:this.timerMinutes, timerSeconds:this.timerSeconds, isTimerRunning:this.isTimerRunning
-          };
-        }catch(e){}
-      }
-      loadState(){
-        try{
-          const s = window.padelState;
-          if(s){
-            this.stage=s.stage||'setup'; this.players=s.players||['','','','','','','',''];
-            this.numCourts=s.numCourts||0; this.rounds=s.rounds||[]; this.currentRound=s.currentRound||0;
-            this.leaderboard=s.leaderboard||[]; this.timerMinutes=s.timerMinutes||10; this.timerSeconds=s.timerSeconds||600;
-            this.isTimerRunning=s.isTimerRunning||false; this.adjustCourtsForPlayers();
-          }
-        }catch(e){}
-      }
-
-      // TIMER
-      updateTimerMinutes(m){ if(!this.isTimerRunning){ this.timerMinutes=parseInt(m)||10; this.timerSeconds=this.timerMinutes*60; this.saveState(); this.render(); } }
-      resetTimer(){ this.stopTimer(); this.timerSeconds=this.timerMinutes*60; this.isTimerRunning=false; this.saveState(); this.render(); }
-      async startTimerWithSound(){ await this.forceActivateAudio(); this.ensureiOSAudioWorks(); this.startTimer(); }
-      ensureiOSAudioWorks(){ const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent); if(isIOS && this.audioContext){ try{ const b=this.audioContext.createBuffer(1,1,22050); const s=this.audioContext.createBufferSource(); s.buffer=b; s.connect(this.audioContext.destination); s.start(0);}catch(e){} } }
-      async forceActivateAudio(){
-        try{
-          if(!this.audioContext){ this.audioContext=new (window.AudioContext||window.webkitAudioContext)(); }
-          if(this.audioContext.state==='suspended'){ await this.audioContext.resume(); }
-          const osc=this.audioContext.createOscillator(); const gain=this.audioContext.createGain();
-          osc.connect(gain); gain.connect(this.audioContext.destination);
-          osc.frequency.setValueAtTime(440,this.audioContext.currentTime); osc.type='sine';
-          gain.gain.setValueAtTime(0.001,this.audioContext.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.0001,this.audioContext.currentTime+0.1);
-          osc.start(this.audioContext.currentTime); osc.stop(this.audioContext.currentTime+0.1);
-          this.audioActivated=true;
-        }catch(e){ this.audioActivated=false; }
-      }
-      startTimer(){
-        if(this.isTimerRunning) return;
-        this.isTimerRunning=true; this.saveState();
-        this.timerInterval=setInterval(()=>{
-          if(this.timerSeconds>0){ this.timerSeconds--; if(this.timerSeconds<=10 && this.timerSeconds>0 && this.audioActivated){ this.playWarningBeep(); } this.saveState(); this.render(); }
-          else { this.timerFinished(); }
-        },1000);
-        this.render();
-      }
-      playWarningBeep(){
-        if(!this.audioContext || !this.audioActivated) return;
-        try{
-          const osc=this.audioContext.createOscillator(); const gain=this.audioContext.createGain();
-          osc.connect(gain); gain.connect(this.audioContext.destination);
-          osc.frequency.setValueAtTime(600,this.audioContext.currentTime); osc.type='square';
-          gain.gain.setValueAtTime(0.2,this.audioContext.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01,this.audioContext.currentTime+0.1);
-          osc.start(this.audioContext.currentTime); osc.stop(this.audioContext.currentTime+0.1);
-        }catch(e){}
-      }
-      pauseTimer(){ this.isTimerRunning=false; if(this.timerInterval){ clearInterval(this.timerInterval); this.timerInterval=null; } this.saveState(); this.render(); }
-      stopTimer(){ this.isTimerRunning=false; if(this.timerInterval){ clearInterval(this.timerInterval); this.timerInterval=null; } this.timerSeconds=this.timerMinutes*60; this.saveState(); this.render(); }
-      timerFinished(){
-        this.isTimerRunning=false; if(this.timerInterval){ clearInterval(this.timerInterval); this.timerInterval=null; }
-        if(this.audioActivated){ this.playLongTimerSound(); } else { if('vibrate' in navigator) navigator.vibrate([1000,300,1000,300,1000,300,1000]); }
-        if('vibrate' in navigator) navigator.vibrate([500,200,500,200,500,200,500]);
-        this.saveState(); this.render();
-      }
-      playLongTimerSound(){
-        if(!this.audioContext || !this.audioActivated) return;
-        try{
-          const beep=(freq,bd,pd,total,vol=0.6)=>{
-            let elapsed=0; const interval=(bd+pd);
-            const play=()=>{
-              if(elapsed>=total) return;
-              const osc=this.audioContext.createOscillator(); const gain=this.audioContext.createGain();
-              osc.connect(gain); gain.connect(this.audioContext.destination);
-              osc.frequency.setValueAtTime(freq,this.audioContext.currentTime); osc.type='square';
-              gain.gain.setValueAtTime(vol,this.audioContext.currentTime);
-              gain.gain.exponentialRampToValueAtTime(0.01,this.audioContext.currentTime+bd);
-              osc.start(this.audioContext.currentTime); osc.stop(this.audioContext.currentTime+bd);
-              elapsed+=interval; if(elapsed<total) setTimeout(play, interval*1000);
-            };
-            play();
-          };
-          beep(1000,0.8,0.3,10,0.6);
-        }catch(e){}
-      }
-      formatTime(s){ const m=Math.floor(s/60); const ss=s%60; return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`; }
-
-      addPlayer(){ this.players.push(''); this.adjustCourtsForPlayers(); this.saveState(); this.render(); }
-      removePlayer(i){ if(this.players.length>4){ this.players.splice(i,1); this.adjustCourtsForPlayers(); this.saveState(); this.render(); } }
-      updatePlayer(i, name){ this.players[i]=name; this.adjustCourtsForPlayers(); this.saveState(); }
-      updateCourts(v){ this.numCourts=parseInt(v)||0; this.saveState(); this.render(); }
-
-      // Ajuste automático de canchas
-      adjustCourtsForPlayers(){
-        const validCount = this.players.filter(p=>p.trim()!=='').length;
-        if(validCount>=4 && validCount<=7){
-          if(this.numCourts!==1){ this.numCourts=1; this.saveState(); }
-        } else if(validCount>=8){
-          if(this.numCourts<1){ this.numCourts=1; this.saveState(); }
-        }
-      }
-
-      // ===== Emparejamiento 1-factorización (con GHOST) =====
-      generateCompleteSchedule(players){
-        let n = players.length;
-        const working = players.slice();
-        const hasGhost = (n % 2 === 1);
-        if(hasGhost){ working.push('GHOST'); n += 1; }
-        const numRounds = n - 1;
-        const rounds = [];
-        let state = working.slice();
-
-        for(let r=0; r<numRounds; r++){
-          const roundPairs=[];
-          for(let i=0; i<n/2; i++){
-            const p1 = state[i];
-            const p2 = state[n-1-i];
-            if(p1!=='GHOST' && p2!=='GHOST') roundPairs.push([p1,p2]);
-          }
-          // rotación círculo: fija el primero, mueve el último a 2da posición
-          state = [state[0], state[n-1], ...state.slice(1, n-1)];
-          rounds.push(roundPairs);
-        }
-        return rounds;
-      }
-
-      // Distribución a canchas (máximo numCourts partidos por ronda)
-      distributePairsToCourts(roundPairs, numCourts, roundNumber){
-        const matches = [];
-        let court = 1;
-        for(let i=0; i+1<roundPairs.length && court<=numCourts; i+=2, court++){
-          const [t1p1, t1p2] = roundPairs[i];
-          const [t2p1, t2p2] = roundPairs[i+1];
-          matches.push({ team1:[t1p1,t1p2], team2:[t2p1,t2p2], court, score1:'', score2:'', finished:false });
-        }
-        return matches;
-      }
-
-      // Torneo completo a partir del schedule base
-      generateTournament(playerList, courts){
-        const validPlayers = playerList.map(p=>p.trim()).filter(Boolean);
-        const n = validPlayers.length;
-        if(n < 4) return [];
-
-        const base = this.generateCompleteSchedule(validPlayers);
-        const totalRounds = (n % 2 === 0) ? (n - 1) : n; // con GHOST -> n rondas
-
-        const allRounds=[];
-        for(let r=0; r<totalRounds; r++){
-          const roundPairs = base[r];
-          const matches = this.distributePairsToCourts(roundPairs, courts, r+1);
-          allRounds.push(matches);
-        }
-        return allRounds;
-      }
-
-      // Helpers para UI de setup
-      getTotalRoundsCount(n){ return (n%2===0) ? (n-1) : n; }
-      getPairsPerRound(n){ return (n%2===0) ? (n/2) : ((n-1)/2); }
-      getMatchesPerRound(n, courts){ const pairs=this.getPairsPerRound(n); const max=Math.floor(pairs/2); return Math.min(max, Math.max(1, courts)); }
-
-      // Inicio del torneo (permite impares)
-      startTournament(){
-        const validPlayers = this.players.filter(p=>p.trim()!=='').map(p=>p.trim());
-        if(validPlayers.length < 4){ alert("Necesitas al menos 4 jugadores"); return; }
-        if(this.numCourts < 1){ alert("Necesitas al menos 1 cancha"); return; }
-
-        this.rounds = this.generateTournament(validPlayers, this.numCourts);
-        this.currentRound = 0; this.stage='playing'; this.resetTimer(); this.saveState(); this.render();
-      }
-
-      updateScore(matchIndex, team, score){ this.rounds[this.currentRound][matchIndex]['score'+team]=score; this.saveState(); this.render(); }
-
-      finishMatch(matchIndex){
-        const m = this.rounds[this.currentRound][matchIndex];
-        if(m.score1!=='' && m.score2!==''){ m.finished=true; this.calculateLeaderboard(); this.saveState(); this.render(); }
-      }
-      reopenMatch(matchIndex){ this.rounds[this.currentRound][matchIndex].finished=false; this.calculateLeaderboard(); this.saveState(); this.render(); }
-
-      calculateLeaderboard(){
-        const validPlayers = this.players.filter(p=>p.trim()!=='').map(p=>p.trim());
-        const stats={}; validPlayers.forEach(p=>{ stats[p]={name:p,wins:0,losses:0,pointsFor:0,pointsAgainst:0}; });
-        this.rounds.forEach(round=>{
-          round.forEach(m=>{
-            if(m.finished){
-              const s1=parseInt(m.score1)||0, s2=parseInt(m.score2)||0, team1Won=(s1>s2);
-              m.team1.forEach(p=>{ if(stats[p]){ stats[p].pointsFor+=s1; stats[p].pointsAgainst+=s2; if(team1Won) stats[p].wins++; else stats[p].losses++; } });
-              m.team2.forEach(p=>{ if(stats[p]){ stats[p].pointsFor+=s2; stats[p].pointsAgainst+=s1; if(!team1Won) stats[p].wins++; else stats[p].losses++; } });
-            }
-          });
-        });
-        const sorted = Object.values(stats).map(p=>({...p, pointDifference:p.pointsFor-p.pointsAgainst}))
-          .sort((a,b)=> b.wins-a.wins || b.pointDifference-a.pointDifference || b.pointsFor-a.pointsFor);
-        let rank=1;
-        this.leaderboard = sorted.map((p,i)=>{ if(i>0){ const prev=sorted[i-1]; if(p.wins!==prev.wins || p.pointDifference!==prev.pointDifference || p.pointsFor!==prev.pointsFor){ rank++; } } return {...p,rank}; });
-      }
-
-      nextRound(){ if(this.currentRound < this.rounds.length-1){ this.currentRound++; this.resetTimer(); this.saveState(); this.render(); } }
-      prevRound(){ if(this.currentRound > 0){ this.currentRound--; this.resetTimer(); this.saveState(); this.render(); } }
-      finishTournament(){ this.calculateLeaderboard(); this.stage='finished'; this.stopTimer(); this.saveState(); this.render(); }
-      playAgain(){
-        const samePlayers = this.leaderboard.map(p=>p.name);
-        this.rounds = this.generateTournament(samePlayers, this.numCourts);
-        this.currentRound=0; this.stage='playing'; this.leaderboard=[]; this.resetTimer(); this.saveState(); this.render();
-      }
-      newTournament(){
-        this.stage='setup'; this.players=['','','','','','','','']; this.numCourts=1; this.rounds=[]; this.currentRound=0; this.leaderboard=[];
-        this.timerMinutes=10; this.resetTimer(); this.saveState(); this.render();
-      }
-      getRankIcon(rank){ return rank===1?'👑':rank===2?'🥈':rank===3?'🥉':'#'+rank; }
-
-      render(){
-        const app=document.getElementById('padel-americano-app');
-        if(this.stage==='setup') this.renderSetup(app);
-        else if(this.stage==='playing') this.renderPlaying(app);
-        else if(this.stage==='finished') this.renderFinished(app);
-      }
-
-      renderSetup(app){
-        const validCount=this.players.filter(p=>p.trim()!=='').length;
-        const isValid = (validCount>=4) && (this.numCourts>=1);
-        const roundsNeeded = isValid ? this.getTotalRoundsCount(validCount) : 0;
-        const matchesPerRound = isValid ? this.getMatchesPerRound(validCount, this.numCourts) : 0;
-
-        app.innerHTML=`
-          <div class="padel-container">
-            <div style="max-width:1000px;margin:0 auto">
-              <div class="text-center" style="margin-bottom:40px">
-                <h1 class="padel-title">
-                  <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
-                       alt="Pádel Americano" 
-                       style="height:80px;width:auto;vertical-align:middle;margin-right:10px">
-                  Pádel Americano
-                </h1>
-                <p class="padel-subtitle">Configura tu torneo americano</p>
-              </div>
-
-              <div class="grid-2">
-                <div class="padel-card">
-                  <h2 style="color:#6f2c91;font-size:1.5rem;font-weight:bold;margin-bottom:20px">
-                    👥 Jugadores (${validCount})
-                  </h2>
-                  <div style="max-height:300px;overflow-y:auto">
-                    ${this.players.map((player, index) => `
-                      <div style="display:flex;gap:10px;margin-bottom:10px">
-                        <input type="text" 
-                               value="${player}" 
-                               placeholder="Jugador ${index + 1}" 
-                               class="padel-input" 
-                               style="flex:1" 
-                               onchange="padelApp.updatePlayer(${index}, this.value)">
-                        ${this.players.length > 4 ? `
-                          <button class="padel-button" 
-                                  style="background:#ffffff;color:#6f2c91;border:2px solid #6f2c91;padding:12px;font-weight:bold"
-                                  onclick="padelApp.removePlayer(${index})">✕</button>
-                        ` : ''}
-                      </div>
-                    `).join('')}
-                  </div>
-                  <button class="padel-button btn-secondary" 
-                          style="width:100%;margin-top:15px" 
-                          onclick="padelApp.addPlayer()">
-                    ➕ Agregar Jugador
-                  </button>
-                </div>
-
-                <div class="padel-card">
-                  <h2 style="color:#6f2c91;font-size:1.5rem;font-weight:bold;margin-bottom:20px">
-                    ⚙️ Configuración
-                  </h2>
-                  <div style="margin-bottom:20px">
-                    <label style="display:block;color:#6f2c91;font-weight:bold;margin-bottom:8px">
-                      Número de canchas disponibles
-                    </label>
-                    <input type="number" 
-                           min="0" max="10" 
-                           value="${this.numCourts}" 
-                           class="padel-input" 
-                           onchange="padelApp.updateCourts(this.value)"
-                           ${validCount >= 4 && validCount <= 7 ? 'disabled' : ''}>
-                    ${validCount >= 4 && validCount <= 7 ? `
-                      <small style="color:#6f2c91;font-style:italic;display:block;margin-top:5px">
-                        ⚠️ Con ${validCount} jugadores solo se permite 1 cancha
-                      </small>
-                    ` : ''}
-                  </div>
-
-                  <div style="background:#f8f9fa;border-left:4px solid #00a650;padding:15px;border-radius:8px;margin-bottom:20px">
-                    <h3 style="color:#6f2c91;font-weight:bold;margin-bottom:10px">🏆 Torneo Americano:</h3>
-                    <ul style="color:#6f2c91;font-size:14px;line-height:1.6">
-                      <li>• Jugadores válidos: <strong>${validCount}</strong></li>
-                      <li>• Canchas: <strong>${this.numCourts}</strong></li>
-                      <li>• Rondas necesarias: <strong>${roundsNeeded}</strong></li>
-                      <li>• Partidos por ronda (máx.): <strong>${matchesPerRound}</strong></li>
-                      <li>• Sin repetir compañero en ninguna ronda</li>
-                      ${validCount%2===1 && validCount>=4 ? '<li>• Número impar: 1 jugador descansa por ronda</li>':''}
-                    </ul>
-                  </div>
-
-                  <button class="padel-button btn-primary" 
-                          style="width:100%;padding:15px;font-size:18px" 
-                          onclick="padelApp.startTournament()" 
-                          ${!isValid ? 'disabled' : ''}>
-                    Iniciar Torneo
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      renderPlaying(app){
-        const currentMatches = this.rounds[this.currentRound] || [];
-        app.innerHTML = `
-          <div class="padel-container">
-            <div style="max-width:1200px;margin:0 auto">
-              <div class="text-center" style="margin-bottom:30px">
-                <h1 class="padel-title">
-                  <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
-                       alt="Pádel" 
-                       style="height:60px;width:auto;vertical-align:middle;margin-right:10px">
-                  Ronda ${this.currentRound + 1} de ${this.rounds.length}
-                </h1>
-
-                <!-- TIMER -->
-                <div class="padel-card" style="margin-bottom:20px">
-                  <h3 style="color:#6f2c91;margin-bottom:15px;font-size:1.2rem">⏱️ Timer de Ronda</h3>
-                  <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:20px;flex-wrap:wrap">
-                    <div style="display:flex;align-items:center;gap:10px">
-                      <label style="color:#6f2c91;font-weight:bold">Duración:</label>
-                      <input type="number" 
-                             min="1" max="60" 
-                             value="${this.timerMinutes}" 
-                             style="width:60px;padding:5px;border:2px solid #00a650;border-radius:5px;text-align:center;font-size:16px"
-                             onchange="padelApp.updateTimerMinutes(this.value)"
-                             ${this.isTimerRunning ? 'disabled' : ''}>
-                      <span style="color:#6f2c91;font-weight:bold">min</span>
-                    </div>
-                  </div>
-
-                  <div style="text-align:center;margin-bottom:20px">
-                    <div style="font-size:3rem;font-weight:bold;color:${this.timerSeconds <= 60 ? '#d63384' : '#6f2c91'};margin-bottom:10px;font-family:monospace">
-                      ${this.formatTime(this.timerSeconds)}
-                    </div>
-                    ${this.timerSeconds <= 60 && this.timerSeconds > 0 ? '<div style="color:#d63384;font-weight:bold;animation:blink 1s infinite">⚠️ ¡Último minuto!</div>' : ''}
-                    ${this.timerSeconds === 0 ? '<div style="color:#d63384;font-weight:bold;font-size:1.2rem">⏰ ¡Tiempo terminado!</div>' : ''}
-                  </div>
-
-                  <div class="flex-center" style="gap:10px">
-                    ${!this.isTimerRunning ? `
-                      <button class="padel-button btn-secondary" onclick="padelApp.startTimerWithSound()">▶️ Iniciar Timer</button>
-                    ` : `
-                      <button class="padel-button btn-danger" onclick="padelApp.pauseTimer()">⏸️ Pausar</button>
-                    `}
-                    <button class="padel-button btn-primary" onclick="padelApp.resetTimer()">🔄 Reiniciar</button>
-                    <button class="padel-button" style="background:#007bff;color:white;font-size:14px;padding:10px 15px" onclick="padelApp.testSound()">🔊 Test Sonido</button>
-                  </div>
-                </div>
-
-                <div class="flex-center" style="margin-bottom:20px">
-                  <button class="padel-button btn-primary" onclick="padelApp.prevRound()" ${this.currentRound === 0 ? 'disabled' : ''}>
-                    ← Anterior
-                  </button>
-                  <button class="padel-button btn-primary" onclick="padelApp.nextRound()" ${this.currentRound === this.rounds.length - 1 ? 'disabled' : ''}>
-                    Siguiente →
-                  </button>
-                </div>
-              </div>
-
-              ${currentMatches.map((match, matchIndex) => `
-                <div class="padel-card">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-                    <h3 style="color:#6f2c91;font-size:1.2rem;font-weight:bold">Cancha ${match.court}</h3>
-                    ${match.finished ? `
-                      <span style="background:#00a650;color:white;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:bold">
-                        ✅ Terminado
-                      </span>
-                    ` : ''}
-                  </div>
-
-                  <div class="padel-court">
-                    <div class="court-lines"></div>
-                    <div class="court-center-line"></div>
-                    <div class="court-net"></div>
-
-                    <div class="team-area team-left">
-                      <div class="team-names">
-                        <div class="team-name">${match.team1.join(' & ')}</div>
-                      </div>
-                      <input type="number" 
-                             value="${match.score1}" 
-                             placeholder="0" 
-                             class="score-input" 
-                             ${match.finished ? 'disabled' : ''} 
-                             onchange="padelApp.updateScore(${matchIndex}, 1, this.value)" 
-                             oninput="padelApp.updateScore(${matchIndex}, 1, this.value)">
-                    </div>
-
-                    <div class="team-area team-right">
-                      <div class="team-names">
-                        <div class="team-name">${match.team2.join(' & ')}</div>
-                      </div>
-                      <input type="number" 
-                             value="${match.score2}" 
-                             placeholder="0" 
-                             class="score-input" 
-                             ${match.finished ? 'disabled' : ''} 
-                             onchange="padelApp.updateScore(${matchIndex}, 2, this.value)" 
-                             oninput="padelApp.updateScore(${matchIndex}, 2, this.value)">
-                    </div>
-
-                    <div class="vs-badge">VS</div>
-                  </div>
-
-                  <div class="text-center" style="margin-top:20px">
-                    ${match.finished ? `
-                      <button class="padel-button btn-primary" onclick="padelApp.reopenMatch(${matchIndex})">
-                        ✏️ Editar Marcador
-                      </button>
-                    ` : `
-                      <button class="padel-button btn-secondary" 
-                              onclick="padelApp.finishMatch(${matchIndex})" 
-                              ${match.score1 === '' || match.score2 === '' ? 'disabled' : ''}>
-                        ✅ Terminar Partido
-                      </button>
-                    `}
-                  </div>
-                </div>
-              `).join('')}
-
-              ${this.leaderboard.length > 0 ? `
-                <div class="padel-card">
-                  <h2 class="text-center" style="color:#6f2c91;font-size:1.8rem;font-weight:bold;margin-bottom:20px">
-                    🏆 Clasificación Actual
-                  </h2>
-                  <table class="leaderboard-table">
-                    <thead>
-                      <tr>
-                        <th>Pos</th>
-                        <th>Jugador</th>
-                        <th style="text-align:center">Ganados</th>
-                        <th style="text-align:center">Perdidos</th>
-                        <th style="text-align:center">Diferencia</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${this.leaderboard.map(player => `
-                        <tr ${player.rank <= 3 ? 'style="background-color:#fff3cd"' : ''}>
-                          <td><span class="rank-${player.rank}">${this.getRankIcon(player.rank)}</span></td>
-                          <td style="font-weight:bold;color:#6f2c91">${player.name}</td>
-                          <td style="text-align:center;color:#00a650;font-weight:bold">${player.wins}</td>
-                          <td style="text-align:center;color:#d63384">${player.losses}</td>
-                          <td style="text-align:center;font-weight:bold;color:${player.pointDifference >= 0 ? '#00a650' : '#d63384'}">
-                            ${player.pointDifference > 0 ? '+' : ''}${player.pointDifference}
-                          </td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              ` : ''}
-
-              <div class="text-center">
-                <button class="padel-button btn-danger" 
-                        style="padding:15px 30px;font-size:18px" 
-                        onclick="padelApp.finishTournament()">
-                  Finalizar Torneo
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
-      renderFinished(app){
-        const podium = { 
-          first: this.leaderboard.find(p => p.rank === 1), 
-          second: this.leaderboard.find(p => p.rank === 2), 
-          third: this.leaderboard.find(p => p.rank === 3) 
+    <script>
+        // Generar manifest dinámicamente
+        const manifestData = {
+            "name": "Pádel Americano",
+            "short_name": "Pádel",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f8f9fa",
+            "theme_color": "#6f2c91",
+            "icons": [
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "72x72",
+                    "type": "image/png",
+                    "purpose": "any"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "96x96",
+                    "type": "image/png",
+                    "purpose": "any"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "128x128",
+                    "type": "image/png",
+                    "purpose": "any"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "144x144",
+                    "type": "image/png",
+                    "purpose": "any"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "152x152",
+                    "type": "image/png",
+                    "purpose": "any"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png",
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any maskable"
+                }
+            ]
         };
-        app.innerHTML = `
-          <div class="padel-container">
-            <div style="max-width:1200px;margin:0 auto">
-              <div class="text-center" style="margin-bottom:40px">
-                <h1 class="padel-title">
-                  <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
-                       alt="Pádel" 
-                       style="height:60px;width:auto;vertical-align:middle;margin-right:10px">
-                  ¡Torneo Finalizado!
-                </h1>
-                <p class="padel-subtitle">Aquí están los resultados finales</p>
-              </div>
 
-              <div class="podium">
-                ${podium.second ? `
-                  <div class="podium-place">
-                    <div style="font-size:3rem">🥈</div>
-                    <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0">${podium.second.name}</h3>
-                    <p style="color:#6f2c91">${podium.second.wins} victorias</p>
-                  </div>
-                ` : ''}
-                ${podium.first ? `
-                  <div class="podium-place" style="transform:scale(1.1)">
-                    <div style="font-size:4rem">👑</div>
-                    <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0;font-size:1.5rem">${podium.first.name}</h3>
-                    <p style="color:#00a650;font-weight:bold">${podium.first.wins} victorias</p>
-                  </div>
-                ` : ''}
-                ${podium.third ? `
-                  <div class="podium-place">
-                    <div style="font-size:3rem">🥉</div>
-                    <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0">${podium.third.name}</h3>
-                    <p style="color:#6f2c91">${podium.third.wins} victorias</p>
-                  </div>
-                ` : ''}
-              </div>
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.getElementById('manifest-placeholder').href = manifestURL;
 
-              <div class="padel-card">
-                <h2 class="text-center" style="color:#6f2c91;font-size:1.8rem;font-weight:bold;margin-bottom:20px">
-                  📊 Clasificación Final
-                </h2>
-                <table class="leaderboard-table">
-                  <thead>
-                    <tr>
-                      <th>Posición</th>
-                      <th>Jugador</th>
-                      <th style="text-align:center">Ganados</th>
-                      <th style="text-align:center">Perdidos</th>
-                      <th style="text-align:center">Puntos +</th>
-                      <th style="text-align:center">Puntos -</th>
-                      <th style="text-align:center">Diferencia</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${this.leaderboard.map(player => `
-                      <tr ${player.rank <= 3 ? 'style="background-color:#fff3cd"' : ''}>
-                        <td><span class="rank-${player.rank}">${this.getRankIcon(player.rank)}</span></td>
-                        <td style="font-weight:bold;color:#6f2c91">${player.name}</td>
-                        <td style="text-align:center;color:#00a650;font-weight:bold">${player.wins}</td>
-                        <td style="text-align:center;color:#d63384">${player.losses}</td>
-                        <td style="text-align:center;color:#6f2c91">${player.pointsFor}</td>
-                        <td style="text-align:center;color:#6f2c91">${player.pointsAgainst}</td>
-                        <td style="text-align:center;font-weight:bold;color:${player.pointDifference >= 0 ? '#00a650' : '#d63384'}">
-                          ${player.pointDifference > 0 ? '+' : ''}${player.pointDifference}
-                        </td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                const swCode = `
+                    const CACHE_NAME = 'padel-americano-v1';
+                    const urlsToCache = ['/'];
+                    
+                    self.addEventListener('install', function(event) {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(function(cache) {
+                                    return cache.addAll(urlsToCache);
+                                })
+                        );
+                    });
+                    
+                    self.addEventListener('fetch', function(event) {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(function(response) {
+                                    if (response) {
+                                        return response;
+                                    }
+                                    return fetch(event.request);
+                                }
+                            )
+                        );
+                    });
+                `;
+                
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl)
+                    .then(function(registration) {
+                        console.log('ServiceWorker registrado exitosamente');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker falló: ', err);
+                    });
+            });
+        }
+        
+        // PWA Install prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallPrompt();
+        });
+        
+        function showInstallPrompt() {
+            const installPrompt = document.getElementById('install-prompt');
+            if (installPrompt && !getInstallDismissed()) {
+                installPrompt.style.display = 'block';
+            }
+        }
+        
+        function installApp() {
+            const installPrompt = document.getElementById('install-prompt');
+            installPrompt.style.display = 'none';
+            
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            }
+        }
+        
+        function dismissInstall() {
+            document.getElementById('install-prompt').style.display = 'none';
+            setInstallDismissed(true);
+        }
 
-              <div class="flex-center" style="gap:20px">
-                <button class="padel-button btn-secondary" 
-                        style="padding:15px 30px;font-size:18px" 
-                        onclick="padelApp.playAgain()">
-                  🔄 Jugar de Nuevo
-                </button>
-                <button class="padel-button btn-primary" 
-                        style="padding:15px 30px;font-size:18px" 
-                        onclick="padelApp.newTournament()">
-                  Nuevo Torneo
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-    }
+        function getInstallDismissed() {
+            return window.installDismissed || false;
+        }
 
-    // Inicializar
-    let padelApp;
-    document.addEventListener('DOMContentLoaded', ()=>{ padelApp = new PadelAmericano(); });
-  </script>
+        function setInstallDismissed(value) {
+            window.installDismissed = value;
+        }
+        
+        setTimeout(() => {
+            if (!deferredPrompt && !window.matchMedia('(display-mode: standalone)').matches) {
+                showInstallPrompt();
+            }
+        }, 3000);
+
+        // Clase principal CON TIMER COMPLETO
+        class PadelAmericano {
+            constructor() {
+                this.stage = 'setup';
+                this.players = ['', '', '', '', '', '', '', ''];
+                this.numCourts = 0;
+                this.rounds = [];
+                this.currentRound = 0;
+                this.leaderboard = [];
+                this.restsByRound = [];
+                // TIMER PROPERTIES
+                this.timerMinutes = 10;
+                this.timerSeconds = 600;
+                this.timerInterval = null;
+                this.isTimerRunning = false;
+                this.init();
+            }
+
+            init() { 
+                this.loadState();
+                this.render(); 
+            }
+
+            saveState() {
+                try {
+                    const state = {
+                        stage: this.stage,
+                        players: this.players,
+                        numCourts: this.numCourts,
+                        rounds: this.rounds,
+                        currentRound: this.currentRound,
+                        leaderboard: this.leaderboard,
+                        restsByRound: this.restsByRound,
+                        timerMinutes: this.timerMinutes,
+                        timerSeconds: this.timerSeconds,
+                        isTimerRunning: this.isTimerRunning
+                    };
+                    window.padelState = state;
+                } catch (e) {
+                    console.log('No se pudo guardar el estado');
+                }
+            }
+
+            loadState() {
+                try {
+                    const state = window.padelState;
+                    if (state) {
+                        this.stage = state.stage || 'setup';
+                        this.players = state.players || ['', '', '', '', '', '', '', ''];
+                        this.numCourts = state.numCourts || 0;
+                        this.rounds = state.rounds || [];
+                        this.currentRound = state.currentRound || 0;
+                        this.leaderboard = state.leaderboard || [];
+                        this.restsByRound = state.restsByRound || [];
+                        this.timerMinutes = state.timerMinutes || 10;
+                        this.timerSeconds = state.timerSeconds || 600;
+                        this.isTimerRunning = state.isTimerRunning || false;
+                        this.adjustCourtsForPlayers();
+                    }
+                } catch (e) {
+                    console.log('No se pudo cargar el estado');
+                }
+            }
+
+            // TIMER METHODS
+            updateTimerMinutes(minutes) {
+                if (!this.isTimerRunning) {
+                    this.timerMinutes = parseInt(minutes) || 10;
+                    this.timerSeconds = this.timerMinutes * 60;
+                    this.saveState();
+                    this.render();
+                }
+            }
+
+            resetTimer() {
+                this.stopTimer();
+                this.timerSeconds = this.timerMinutes * 60;
+                this.isTimerRunning = false;
+                this.saveState();
+                this.render();
+            }
+
+            // NUEVO: Inicializar audio con interacción del usuario (OBLIGATORIO para móviles)
+            async startTimerWithSound() {
+                // PASO 1: Activar audio con interacción directa del usuario
+                await this.forceActivateAudio();
+                
+                // PASO 2: Para iOS - forzar reproducción de sonido dummy
+                this.ensureiOSAudioWorks();
+                
+                // PASO 3: Iniciar timer normalmente
+                this.startTimer();
+            }
+
+            // Específico para iOS - asegurar que el audio funcione
+            ensureiOSAudioWorks() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (isIOS && this.audioContext) {
+                    try {
+                        // Crear un sonido silencioso para iOS
+                        const buffer = this.audioContext.createBuffer(1, 1, 22050);
+                        const source = this.audioContext.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(this.audioContext.destination);
+                        source.start(0);
+                        console.log('🍎 Audio preparado para iOS');
+                    } catch (error) {
+                        console.log('⚠️ No se pudo preparar audio para iOS');
+                    }
+                }
+            }
+
+            // Forzar activación de audio en móviles
+            async forceActivateAudio() {
+                try {
+                    // Crear contexto de audio si no existe
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                    
+                    // Reanudar contexto si está suspendido
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    
+                    // Reproducir un sonido silencioso para activar el audio
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.001, this.audioContext.currentTime); // Muy bajo para que no se escuche
+                    gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    
+                    // Marcar como activado
+                    this.audioActivated = true;
+                    
+                    console.log('✅ Audio activado correctamente para móvil');
+                    
+                } catch (error) {
+                    console.log('❌ Error activando audio:', error);
+                    this.audioActivated = false;
+                }
+            }
+
+            // Botón para probar el sonido (mejorado para iOS)
+            async testSound() {
+                await this.forceActivateAudio();
+                
+                // Detectar iOS
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                
+                // Reproducir sonido de prueba
+                try {
+                    if (this.audioContext) {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                        oscillator.type = 'square';
+                        
+                        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                        
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.5);
+                        
+                        if (isIOS) {
+                            alert('🍎 iOS detectado - Si escuchaste el beep, funcionará. Si no, usa Safari en lugar de Chrome.');
+                        } else {
+                            alert('🔊 Si escuchaste el beep, el sonido funcionará correctamente');
+                        }
+                    }
+                } catch (error) {
+                    if (isIOS) {
+                        alert('❌ iOS: Intenta usar Safari o agregar la app a pantalla de inicio');
+                    } else {
+                        alert('❌ Error de sonido. Intenta desde el navegador Chrome.');
+                    }
+                }
+            }
+
+            startTimer() {
+                if (this.isTimerRunning) return;
+                
+                this.isTimerRunning = true;
+                this.saveState();
+                
+                this.timerInterval = setInterval(() => {
+                    if (this.timerSeconds > 0) {
+                        this.timerSeconds--;
+                        
+                        // Beep de advertencia en los últimos 10 segundos (solo si audio está activado)
+                        if (this.timerSeconds <= 10 && this.timerSeconds > 0 && this.audioActivated) {
+                            this.playWarningBeep();
+                        }
+                        
+                        this.saveState();
+                        this.render();
+                    } else {
+                        this.timerFinished();
+                    }
+                }, 1000);
+                
+                this.render();
+            }
+
+            // Inicializar contexto de audio (necesario para que funcione en móviles)
+            initializeAudioContext() {
+                if (!this.audioContext) {
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        
+                        // En móviles, el contexto de audio necesita un gesto del usuario
+                        if (this.audioContext.state === 'suspended') {
+                            this.audioContext.resume();
+                        }
+                    } catch (error) {
+                        console.log('No se pudo inicializar el contexto de audio:', error);
+                    }
+                }
+            }
+
+            // Beep de advertencia para los últimos segundos (mejorado)
+            playWarningBeep() {
+                if (!this.audioContext || !this.audioActivated) return;
+                
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                    oscillator.type = 'square';
+                    
+                    gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                    
+                    oscillator.start(this.audioContext.currentTime);
+                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                } catch (error) {
+                    console.log('Error en beep de advertencia:', error);
+                }
+            }
+
+            pauseTimer() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                this.saveState();
+                this.render();
+            }
+
+            stopTimer() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                this.timerSeconds = this.timerMinutes * 60;
+                this.saveState();
+                this.render();
+            }
+
+            timerFinished() {
+                this.isTimerRunning = false;
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+
+                // SONIDO AUDIBLE CONTINUO - SIN POPUP que lo interrumpa
+                if (this.audioActivated) {
+                    this.playLongTimerSound();
+                } else {
+                    // Si no hay audio, hacer vibración más intensa
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([1000, 300, 1000, 300, 1000, 300, 1000]);
+                    }
+                }
+                
+                // Vibración en móviles
+                if ('vibrate' in navigator) {
+                    navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
+                }
+                
+                this.saveState();
+                this.render();
+                
+                // SIN POPUP - Solo audio continuo por 10 segundos
+                console.log('⏰ TIEMPO TERMINADO - Sonando alarma continua');
+            }
+
+            // Sonido LARGO Y REPETITIVO para alarma final (10 segundos)
+            playLongTimerSound() {
+                if (!this.audioContext || !this.audioActivated) {
+                    console.log('⚠️ Audio no disponible');
+                    return;
+                }
+                
+                try {
+                    // Función para crear beeps continuos
+                    const createContinuousBeep = (frequency, beepDuration, pauseDuration, totalDuration, volume = 0.5) => {
+                        let elapsed = 0;
+                        const interval = beepDuration + pauseDuration;
+                        
+                        const playBeep = () => {
+                            if (elapsed >= totalDuration) return;
+                            
+                            const oscillator = this.audioContext.createOscillator();
+                            const gainNode = this.audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(this.audioContext.destination);
+                            
+                            oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                            oscillator.type = 'square';
+                            
+                            gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + beepDuration);
+                            
+                            oscillator.start(this.audioContext.currentTime);
+                            oscillator.stop(this.audioContext.currentTime + beepDuration);
+                            
+                            elapsed += interval;
+                            
+                            // Programar siguiente beep
+                            if (elapsed < totalDuration) {
+                                setTimeout(playBeep, interval * 1000);
+                            }
+                        };
+                        
+                        playBeep();
+                    };
+                    
+                    // ALARMA CONTINUA por 10 segundos: BIIIIP-pausa-BIIIIP-pausa...
+                    createContinuousBeep(1000, 0.8, 0.3, 10, 0.6); // 10 segundos de beeps
+                    
+                    console.log('🚨 Reproduciendo alarma continua por 10 segundos');
+                    
+                } catch (error) {
+                    console.log('❌ Error al reproducir sonido:', error);
+                }
+            }
+
+            // Fallback con síntesis de voz si el audio no funciona
+            playVoiceAlert() {
+                try {
+                    if (typeof window !== 'undefined' && window.speechSynthesis) {
+                        const utterance = new SpeechSynthesisUtterance('¡TIEMPO TERMINADO! ¡TIEMPO TERMINADO!');
+                        utterance.rate = 1.5;
+                        utterance.volume = 1;
+                        utterance.pitch = 1.2;
+                        utterance.lang = 'es-ES';
+                        window.speechSynthesis.speak(utterance);
+                    }
+                } catch (error) {
+                    console.log('Error con síntesis de voz:', error);
+                    // Fallback 2: Reproducir un tono usando data URI
+                    this.playDataURISound();
+                }
+            }
+
+            // Último fallback con data URI
+            playDataURISound() {
+                try {
+                    // Crear un audio element con un tono generado
+                    const audio = new Audio();
+                    // Generar un tono simple usando data URI
+                    const duration = 2;
+                    const sampleRate = 8000;
+                    const samples = duration * sampleRate;
+                    const buffer = new ArrayBuffer(44 + samples * 2);
+                    const view = new DataView(buffer);
+                    
+                    // Header WAV
+                    const writeString = (offset, string) => {
+                        for (let i = 0; i < string.length; i++) {
+                            view.setUint8(offset + i, string.charCodeAt(i));
+                        }
+                    };
+                    
+                    writeString(0, 'RIFF');
+                    view.setUint32(4, 36 + samples * 2, true);
+                    writeString(8, 'WAVE');
+                    writeString(12, 'fmt ');
+                    view.setUint32(16, 16, true);
+                    view.setUint16(20, 1, true);
+                    view.setUint16(22, 1, true);
+                    view.setUint32(24, sampleRate, true);
+                    view.setUint32(28, sampleRate * 2, true);
+                    view.setUint16(32, 2, true);
+                    view.setUint16(34, 16, true);
+                    writeString(36, 'data');
+                    view.setUint32(40, samples * 2, true);
+                    
+                    // Generar tono
+                    for (let i = 0; i < samples; i++) {
+                        const sample = Math.sin(2 * Math.PI * 800 * i / sampleRate) * 0.5;
+                        view.setInt16(44 + i * 2, sample * 32767, true);
+                    }
+                    
+                    const blob = new Blob([buffer], { type: 'audio/wav' });
+                    audio.src = URL.createObjectURL(blob);
+                    audio.volume = 0.8;
+                    audio.play();
+                } catch (error) {
+                    console.log('Todos los métodos de audio fallaron:', error);
+                }
+            }
+
+            formatTime(totalSeconds) {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            addPlayer() { 
+                this.players.push(''); 
+                this.adjustCourtsForPlayers();
+                this.saveState();
+                this.render(); 
+            }
+
+            removePlayer(index) { 
+                if (this.players.length > 4) { 
+                    this.players.splice(index, 1); 
+                    this.adjustCourtsForPlayers();
+                    this.saveState();
+                    this.render(); 
+                } 
+            }
+
+            updatePlayer(index, name) { 
+                this.players[index] = name; 
+                this.adjustCourtsForPlayers();
+                this.saveState();
+            }
+
+            updateCourts(value) { 
+                const requested = parseInt(value) || 0;
+                const validCount = this.players.filter(p => p.trim() !== '').length;
+                const allowed = this.getAllowedCourtsForPlayers(validCount);
+                if (allowed.length === 0) {
+                    this.numCourts = 0;
+                } else if (allowed.includes(requested)) {
+                    this.numCourts = requested;
+                } else {
+                    // Elegir el permitido más cercano
+                    let nearest = allowed[0];
+                    let bestDiff = Math.abs(requested - nearest);
+                    for (let i = 1; i < allowed.length; i++) {
+                        const d = Math.abs(requested - allowed[i]);
+                        if (d < bestDiff || (d === bestDiff && allowed[i] < nearest)) {
+                            nearest = allowed[i];
+                            bestDiff = d;
+                        }
+                    }
+                    this.numCourts = nearest;
+                }
+                this.saveState();
+                this.render(); 
+            }
+
+            // Nueva función para ajustar automáticamente las canchas según jugadores
+            adjustCourtsForPlayers() {
+                const validCount = this.players.filter(p => p.trim() !== '').length;
+                const allowed = this.getAllowedCourtsForPlayers(validCount);
+                if (allowed.length === 0) return;
+                if (!allowed.includes(this.numCourts)) {
+                    this.numCourts = allowed[0];
+                    this.saveState();
+                }
+            }
+
+            // 1-factorización (Circle Method) con GHOST
+            generateCompleteSchedule(players) {
+                let n = players.length;
+                const working = players.slice();
+                const hasGhost = (n % 2 === 1);
+                if (hasGhost) { working.push('GHOST'); n += 1; }
+                const numRounds = n - 1;
+                const rounds = [];
+                let state = working.slice();
+
+                for (let r = 0; r < numRounds; r++) {
+                    const roundPairs = [];
+                    for (let i = 0; i < n / 2; i++) {
+                        const p1 = state[i];
+                        const p2 = state[n - 1 - i];
+                        if (p1 !== 'GHOST' && p2 !== 'GHOST') roundPairs.push([p1, p2]);
+                    }
+                    // Rotación: fijo el primero, último pasa a segunda posición
+                    state = [state[0], state[n - 1], ...state.slice(1, n - 1)];
+                    rounds.push(roundPairs);
+                }
+                return rounds;
+            }
+
+            // Canchas permitidas por cantidad de jugadores
+            getAllowedCourtsForPlayers(n) {
+                if (n >= 4 && n <= 7) return [1];
+                if (n >= 8 && n <= 11) return [1, 2];
+                if (n === 12) return [1, 2, 3];
+                if (n >= 13 && n <= 15) return [2, 3];
+                return [];
+            }
+
+            // Helpers de capacidad por ronda (según reglas rápidas)
+            getPairsPerRound(n) { return (n % 2 === 0) ? (n / 2) : ((n - 1) / 2); }
+            getMatchesPerRound(n, courts) {
+                const pairs = this.getPairsPerRound(n);
+                const maxMatchesByPairs = Math.floor(pairs / 2);
+                const allowedCourts = Math.max(1, courts | 0);
+                return Math.min(allowedCourts, maxMatchesByPairs);
+            }
+            getMaxActivePlayers(n) { return (n % 2 === 0) ? n : (n - 1); }
+            getActivePlayersAndRests(n, courts) {
+                const matches = this.getMatchesPerRound(n, courts);
+                const active = Math.min(4 * matches, this.getMaxActivePlayers(n));
+                const rests = Math.max(0, n - active);
+                return { active, rests, matches };
+            }
+
+            // Construir torneo: emparejar parejas en partidos y limitar por canchas
+            generateTournament(playerList, courts) {
+                const validPlayers = playerList.map(p => p.trim()).filter(Boolean);
+                const n = validPlayers.length;
+                if (n < 4) return [];
+
+                const base = this.generateCompleteSchedule(validPlayers);
+                // Para N impar: usar solo N-1 rondas (no N)
+                const roundsToUse = Math.max(0, n - 1);
+                const total = Math.min(roundsToUse, base.length);
+                const allRounds = [];
+                const rests = [];
+                for (let r = 0; r < total; r++) {
+                    const roundPairs = base[r];
+                    const roundMatches = [];
+                    let court = 1;
+                    for (let i = 0; i + 1 < roundPairs.length && court <= courts; i += 2, court++) {
+                        const [t1p1, t1p2] = roundPairs[i];
+                        const [t2p1, t2p2] = roundPairs[i + 1];
+                        roundMatches.push({
+                            team1: [t1p1, t1p2],
+                            team2: [t2p1, t2p2],
+                            court: court,
+                            score1: '',
+                            score2: '',
+                            finished: false,
+                        });
+                    }
+                    // Calcular quién descansa realmente: jugadores que no aparecen en los partidos programados (limitados por canchas)
+                    const playingSet = new Set();
+                    roundMatches.forEach(m => {
+                        m.team1.forEach(p => playingSet.add(p));
+                        m.team2.forEach(p => playingSet.add(p));
+                    });
+                    const resting = validPlayers.filter(p => !playingSet.has(p));
+                    rests.push(resting);
+                    allRounds.push(roundMatches);
+                }
+                this.restsByRound = rests;
+                return allRounds;
+            }
+
+            startTournament() {
+                const validPlayers = this.players.filter(p => p.trim() !== '').map(p => p.trim());
+                if (validPlayers.length < 4) { 
+                    alert("Necesitas al menos 4 jugadores"); 
+                    return; 
+                }
+                if (this.numCourts < 1) { 
+                    alert("Necesitas al menos 1 cancha"); 
+                    return; 
+                }
+                
+                this.rounds = this.generateTournament(validPlayers, this.numCourts);
+                this.currentRound = 0; 
+                this.stage = 'playing';
+                this.resetTimer();
+                this.saveState();
+                this.render();
+            }
+
+            updateScore(matchIndex, team, score) { 
+                this.rounds[this.currentRound][matchIndex]['score' + team] = score; 
+                this.saveState();
+                this.render();
+            }
+
+            finishMatch(matchIndex) {
+                const match = this.rounds[this.currentRound][matchIndex];
+                if (match.score1 !== '' && match.score2 !== '') { 
+                    match.finished = true; 
+                    this.calculateLeaderboard(); 
+                    this.saveState();
+                    this.render(); 
+                }
+            }
+
+            reopenMatch(matchIndex) { 
+                this.rounds[this.currentRound][matchIndex].finished = false; 
+                this.calculateLeaderboard(); 
+                this.saveState();
+                this.render(); 
+            }
+
+            calculateLeaderboard() {
+                const validPlayers = this.players.filter(p => p.trim() !== '').map(p => p.trim());
+                const playerStats = {};
+                
+                validPlayers.forEach(player => { 
+                    playerStats[player] = { 
+                        name: player, 
+                        wins: 0, 
+                        losses: 0, 
+                        pointsFor: 0, 
+                        pointsAgainst: 0 
+                    }; 
+                });
+                
+                this.rounds.forEach(round => {
+                    round.forEach(match => {
+                        if (match.finished) {
+                            const score1 = parseInt(match.score1) || 0; 
+                            const score2 = parseInt(match.score2) || 0; 
+                            const team1Won = score1 > score2;
+                            
+                            match.team1.forEach(player => { 
+                                if (playerStats[player]) { 
+                                    playerStats[player].pointsFor += score1; 
+                                    playerStats[player].pointsAgainst += score2; 
+                                    if (team1Won) playerStats[player].wins++; 
+                                    else playerStats[player].losses++; 
+                                } 
+                            });
+                            
+                            match.team2.forEach(player => { 
+                                if (playerStats[player]) { 
+                                    playerStats[player].pointsFor += score2; 
+                                    playerStats[player].pointsAgainst += score1; 
+                                    if (!team1Won) playerStats[player].wins++; 
+                                    else playerStats[player].losses++; 
+                                } 
+                            });
+                        }
+                    });
+                });
+                
+                const sortedPlayers = Object.values(playerStats)
+                    .map(player => ({ 
+                        ...player, 
+                        pointDifference: player.pointsFor - player.pointsAgainst 
+                    }))
+                    .sort((a, b) => 
+                        b.wins - a.wins || 
+                        b.pointDifference - a.pointDifference || 
+                        b.pointsFor - a.pointsFor
+                    );
+                
+                let rank = 1;
+                this.leaderboard = sortedPlayers.map((player, index) => {
+                    if (index > 0) {
+                        const prev = sortedPlayers[index - 1];
+                        if (player.wins !== prev.wins || 
+                            player.pointDifference !== prev.pointDifference || 
+                            player.pointsFor !== prev.pointsFor) { 
+                            rank++; 
+                        }
+                    }
+                    return { ...player, rank };
+                });
+            }
+
+            nextRound() { 
+                if (this.currentRound < this.rounds.length - 1) { 
+                    this.currentRound++;
+                    this.resetTimer();
+                    this.saveState();
+                    this.render(); 
+                } 
+            }
+            
+            prevRound() { 
+                if (this.currentRound > 0) { 
+                    this.currentRound--;
+                    this.resetTimer();
+                    this.saveState();
+                    this.render(); 
+                } 
+            }
+            
+            finishTournament() { 
+                this.calculateLeaderboard(); 
+                this.stage = 'finished'; 
+                this.stopTimer();
+                this.saveState();
+                this.render(); 
+            }
+            
+            playAgain() {
+                const samePlayersList = this.leaderboard.map(player => player.name);
+                this.rounds = this.generateTournament(samePlayersList, this.numCourts);
+                this.currentRound = 0;
+                this.stage = 'playing';
+                this.leaderboard = [];
+                this.resetTimer();
+                this.saveState();
+                this.render();
+            }
+
+            newTournament() { 
+                this.stage = 'setup'; 
+                this.players = ['', '', '', '', '', '', '', '']; 
+                this.numCourts = 1; 
+                this.rounds = []; 
+                this.currentRound = 0; 
+                this.leaderboard = [];
+                this.timerMinutes = 10;
+                this.resetTimer();
+                this.saveState();
+                this.render(); 
+            }
+            
+            getRankIcon(rank) { 
+                return rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank; 
+            }
+
+            render() {
+                const app = document.getElementById('padel-americano-app');
+                if (this.stage === 'setup') this.renderSetup(app);
+                else if (this.stage === 'playing') this.renderPlaying(app);
+                else if (this.stage === 'finished') this.renderFinished(app);
+            }
+
+            renderSetup(app) {
+                const validCount = this.players.filter(p => p.trim() !== '').length;
+                const isValid = validCount >= 4 && this.numCourts >= 1;
+                
+
+                
+                app.innerHTML = `
+                    <div class="padel-container">
+                        <div style="max-width:1000px;margin:0 auto">
+                            <div class="text-center" style="margin-bottom:40px">
+                                <h1 class="padel-title">
+                                    <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
+                                         alt="Pádel Americano" 
+                                         style="height:80px;width:auto;vertical-align:middle;margin-right:10px">
+                                    Pádel Americano
+                                </h1>
+                                <p class="padel-subtitle">Configura tu torneo americano</p>
+                            </div>
+                            
+                            <div class="grid-2">
+                                <div class="padel-card">
+                                    <h2 style="color:#6f2c91;font-size:1.5rem;font-weight:bold;margin-bottom:20px">
+                                        👥 Jugadores (${validCount})
+                                    </h2>
+                                    <div style="max-height:300px;overflow-y:auto">
+                                        ${this.players.map((player, index) => `
+                                            <div style="display:flex;gap:10px;margin-bottom:10px">
+                                                <input type="text" 
+                                                       value="${player}" 
+                                                       placeholder="Jugador ${index + 1}" 
+                                                       class="padel-input" 
+                                                       style="flex:1" 
+                                                       onchange="padelApp.updatePlayer(${index}, this.value)">
+                                                ${this.players.length > 4 ? `
+                                                    <button class="padel-button" 
+                                                            style="background:#ffffff;color:#6f2c91;border:2px solid #6f2c91;padding:12px;font-weight:bold"
+                                                            onclick="padelApp.removePlayer(${index})">✕</button>
+                                                ` : ''}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <button class="padel-button btn-secondary" 
+                                            style="width:100%;margin-top:15px" 
+                                            onclick="padelApp.addPlayer()">
+                                        ➕ Agregar Jugador
+                                    </button>
+                                </div>
+                                
+                                <div class="padel-card">
+                                    <h2 style="color:#6f2c91;font-size:1.5rem;font-weight:bold;margin-bottom:20px">
+                                        ⚙️ Configuración
+                                    </h2>
+                                    <div style="margin-bottom:20px">
+                                        <label style="display:block;color:#6f2c91;font-weight:bold;margin-bottom:8px">
+                                            Número de canchas disponibles
+                                        </label>
+                                        <input type="number" 
+                                               min="0" max="10" 
+                                               value="${this.numCourts}" 
+                                               class="padel-input" 
+                                               onchange="padelApp.updateCourts(this.value)"
+                                               ${validCount >= 4 && validCount <= 7 ? 'disabled' : ''}>
+                                        ${validCount >= 4 && validCount <= 7 ? `
+                                            <small style="color:#6f2c91;font-style:italic;display:block;margin-top:5px">
+                                                ⚠️ Con ${validCount} jugadores solo se permite 1 cancha
+                                            </small>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div style="background:#f8f9fa;border-left:4px solid #00a650;padding:15px;border-radius:8px;margin-bottom:20px">
+                                        <h3 style="color:#6f2c91;font-weight:bold;margin-bottom:10px">🏆 Torneo Americano:</h3>
+                                        ${(() => {
+                                            const roundsNeeded = isValid ? (validCount - 1) : 0;
+                                            const pairsPerRound = isValid ? this.getPairsPerRound(validCount) : 0;
+                                            const maxMatchesPerRound = isValid ? this.getMatchesPerRound(validCount, this.numCourts) : 0;
+                                            const cap = isValid ? this.getActivePlayersAndRests(validCount, this.numCourts) : {active:0, rests:0};
+                                            const imparInfo = (validCount % 2 === 1 && validCount >= 4) ? '<li>• Con número impar, cada ronda descansa 1 jugador</li>' : '';
+                                            return `
+                                                <ul style="color:#6f2c91;font-size:14px;line-height:1.6">
+                                                    <li>• Jugadores válidos: <strong>${validCount}</strong></li>
+                                                    <li>• Canchas: <strong>${this.numCourts}</strong></li>
+                                                    <li>• Rondas necesarias: <strong>${roundsNeeded}</strong></li>
+                                                    <li>• Partidos por ronda (máx.): <strong>${maxMatchesPerRound}</strong></li>
+                                                    <li>• Juegan por ronda: <strong>${cap.active}</strong></li>
+                                                    <li>• Descansan por ronda: <strong>${cap.rests}</strong></li>
+                                                    <li>• Sin repetir compañero a lo largo del torneo</li>
+                                                    ${imparInfo}
+                                                </ul>
+                                            `;
+                                        })()}
+                                    </div>
+                                    
+                                    <button class="padel-button btn-primary" 
+                                            style="width:100%;padding:15px;font-size:18px" 
+                                            onclick="padelApp.startTournament()" 
+                                            ${!isValid ? 'disabled' : ''}>
+                                        Iniciar Torneo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderPlaying(app) {
+                const currentMatches = this.rounds[this.currentRound] || [];
+                const restingPlayers = (this.restsByRound && this.restsByRound[this.currentRound]) ? this.restsByRound[this.currentRound] : [];
+                
+                app.innerHTML = `
+                    <div class="padel-container">
+                        <div style="max-width:1200px;margin:0 auto">
+                            <div class="text-center" style="margin-bottom:30px">
+                                <h1 class="padel-title">
+                                    <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
+                                         alt="Pádel" 
+                                         style="height:60px;width:auto;vertical-align:middle;margin-right:10px">
+                                    Ronda ${this.currentRound + 1} de ${this.rounds.length}
+                                </h1>
+                                
+                                <!-- TIMER SECTION -->
+                                <div class="padel-card" style="margin-bottom:20px">
+                                    <h3 style="color:#6f2c91;margin-bottom:15px;font-size:1.2rem">⏱️ Timer de Ronda</h3>
+                                    
+                                    <div style="display:flex;align-items:center;justify-content:center;gap:15px;margin-bottom:20px;flex-wrap:wrap">
+                                        <div style="display:flex;align-items:center;gap:10px">
+                                            <label style="color:#6f2c91;font-weight:bold">Duración:</label>
+                                            <input type="number" 
+                                                   min="1" max="60" 
+                                                   value="${this.timerMinutes}" 
+                                                   style="width:60px;padding:5px;border:2px solid #00a650;border-radius:5px;text-align:center;font-size:16px"
+                                                   onchange="padelApp.updateTimerMinutes(this.value)"
+                                                   ${this.isTimerRunning ? 'disabled' : ''}>
+                                            <span style="color:#6f2c91;font-weight:bold">min</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="text-align:center;margin-bottom:20px">
+                                        <div style="font-size:3rem;font-weight:bold;color:${this.timerSeconds <= 60 ? '#d63384' : '#6f2c91'};margin-bottom:10px;font-family:monospace">
+                                            ${this.formatTime(this.timerSeconds)}
+                                        </div>
+                                        ${this.timerSeconds <= 60 && this.timerSeconds > 0 ? '<div style="color:#d63384;font-weight:bold;animation:blink 1s infinite">⚠️ ¡Último minuto!</div>' : ''}
+                                        ${this.timerSeconds === 0 ? '<div style="color:#d63384;font-weight:bold;font-size:1.2rem">⏰ ¡Tiempo terminado!</div>' : ''}
+                                    </div>
+                                    
+                                    <div class="flex-center" style="gap:10px">
+                                        ${!this.isTimerRunning ? `
+                                            <button class="padel-button btn-secondary" onclick="padelApp.startTimerWithSound()">
+                                                ▶️ Iniciar Timer
+                                            </button>
+                                        ` : `
+                                            <button class="padel-button btn-danger" onclick="padelApp.pauseTimer()">
+                                                ⏸️ Pausar
+                                            </button>
+                                        `}
+                                        <button class="padel-button btn-primary" onclick="padelApp.resetTimer()">
+                                            🔄 Reiniciar
+                                        </button>
+                                        <button class="padel-button" style="background:#007bff;color:white;font-size:14px;padding:10px 15px" onclick="padelApp.testSound()">
+                                            🔊 Test Sonido
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex-center" style="margin-bottom:20px">
+                                    <button class="padel-button btn-primary" 
+                                            onclick="padelApp.prevRound()" 
+                                            ${this.currentRound === 0 ? 'disabled' : ''}>
+                                        ← Anterior
+                                    </button>
+                                    <button class="padel-button btn-primary" 
+                                            onclick="padelApp.nextRound()" 
+                                            ${this.currentRound === this.rounds.length - 1 ? 'disabled' : ''}>
+                                        Siguiente →
+                                    </button>
+                                </div>
+                            </div>
+                            ${restingPlayers && restingPlayers.length>0 ? `
+                                <div class="padel-card" style="border-color:#ffc107">
+                                    <div class="text-center" style="color:#6f2c91;font-weight:bold">
+                                        💤 Descansa: ${restingPlayers.join(', ')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            ${currentMatches.map((match, matchIndex) => `
+                                <div class="padel-card">
+                                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+                                        <h3 style="color:#6f2c91;font-size:1.2rem;font-weight:bold">
+                                            Cancha ${match.court}
+                                        </h3>
+                                        ${match.finished ? `
+                                            <span style="background:#00a650;color:white;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:bold">
+                                                ✅ Terminado
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div class="padel-court">
+                                        <div class="court-lines"></div>
+                                        <div class="court-center-line"></div>
+                                        <div class="court-net"></div>
+                                        
+                                        <div class="team-area team-left">
+                                            <div class="team-names">
+                                                <div class="team-name">${match.team1.join(' & ')}</div>
+                                            </div>
+                                            <input type="number" 
+                                                   value="${match.score1}" 
+                                                   placeholder="0" 
+                                                   class="score-input" 
+                                                   ${match.finished ? 'disabled' : ''} 
+                                                   onchange="padelApp.updateScore(${matchIndex}, 1, this.value)" 
+                                                   oninput="padelApp.updateScore(${matchIndex}, 1, this.value)">
+                                        </div>
+                                        
+                                        <div class="team-area team-right">
+                                            <div class="team-names">
+                                                <div class="team-name">${match.team2.join(' & ')}</div>
+                                            </div>
+                                            <input type="number" 
+                                                   value="${match.score2}" 
+                                                   placeholder="0" 
+                                                   class="score-input" 
+                                                   ${match.finished ? 'disabled' : ''} 
+                                                   onchange="padelApp.updateScore(${matchIndex}, 2, this.value)" 
+                                                   oninput="padelApp.updateScore(${matchIndex}, 2, this.value)">
+                                        </div>
+                                        
+                                        <div class="vs-badge">VS</div>
+                                    </div>
+                                    
+                                    <div class="text-center" style="margin-top:20px">
+                                        ${match.finished ? `
+                                            <button class="padel-button btn-primary" 
+                                                    onclick="padelApp.reopenMatch(${matchIndex})">
+                                                ✏️ Editar Marcador
+                                            </button>
+                                        ` : `
+                                            <button class="padel-button btn-secondary" 
+                                                    onclick="padelApp.finishMatch(${matchIndex})" 
+                                                    ${match.score1 === '' || match.score2 === '' ? 'disabled' : ''}>
+                                                ✅ Terminar Partido
+                                            </button>
+                                        `}
+                                    </div>
+                                </div>
+                            `).join('')}
+                            
+                            ${this.leaderboard.length > 0 ? `
+                                <div class="padel-card">
+                                    <h2 class="text-center" style="color:#6f2c91;font-size:1.8rem;font-weight:bold;margin-bottom:20px">
+                                        🏆 Clasificación Actual
+                                    </h2>
+                                    <table class="leaderboard-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Pos</th>
+                                                <th>Jugador</th>
+                                                <th style="text-align:center">Ganados</th>
+                                                <th style="text-align:center">Perdidos</th>
+                                                <th style="text-align:center">Diferencia</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${this.leaderboard.map(player => `
+                                                <tr ${player.rank <= 3 ? 'style="background-color:#fff3cd"' : ''}>
+                                                    <td>
+                                                        <span class="rank-${player.rank}">
+                                                            ${this.getRankIcon(player.rank)}
+                                                        </span>
+                                                    </td>
+                                                    <td style="font-weight:bold;color:#6f2c91">${player.name}</td>
+                                                    <td style="text-align:center;color:#00a650;font-weight:bold">${player.wins}</td>
+                                                    <td style="text-align:center;color:#d63384">${player.losses}</td>
+                                                    <td style="text-align:center;font-weight:bold;color:${player.pointDifference >= 0 ? '#00a650' : '#d63384'}">
+                                                        ${player.pointDifference > 0 ? '+' : ''}${player.pointDifference}
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="text-center">
+                                <button class="padel-button btn-danger" 
+                                        style="padding:15px 30px;font-size:18px" 
+                                        onclick="padelApp.finishTournament()">
+                                    Finalizar Torneo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderFinished(app) {
+                const podium = { 
+                    first: this.leaderboard.find(p => p.rank === 1), 
+                    second: this.leaderboard.find(p => p.rank === 2), 
+                    third: this.leaderboard.find(p => p.rank === 3) 
+                };
+                
+                app.innerHTML = `
+                    <div class="padel-container">
+                        <div style="max-width:1200px;margin:0 auto">
+                            <div class="text-center" style="margin-bottom:40px">
+                                <h1 class="padel-title">
+                                    <img src="https://padel.random.biz/wp-content/uploads/2025/05/Padel-Logo-1.png" 
+                                         alt="Pádel" 
+                                         style="height:60px;width:auto;vertical-align:middle;margin-right:10px">
+                                    ¡Torneo Finalizado!
+                                </h1>
+                                <p class="padel-subtitle">Aquí están los resultados finales</p>
+                            </div>
+                            
+                            <div class="podium">
+                                ${podium.second ? `
+                                    <div class="podium-place">
+                                        <div style="font-size:3rem">🥈</div>
+                                        <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0">${podium.second.name}</h3>
+                                        <p style="color:#6f2c91">${podium.second.wins} victorias</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${podium.first ? `
+                                    <div class="podium-place" style="transform:scale(1.1)">
+                                        <div style="font-size:4rem">👑</div>
+                                        <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0;font-size:1.5rem">${podium.first.name}</h3>
+                                        <p style="color:#00a650;font-weight:bold">${podium.first.wins} victorias</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${podium.third ? `
+                                    <div class="podium-place">
+                                        <div style="font-size:3rem">🥉</div>
+                                        <h3 style="color:#6f2c91;font-weight:bold;margin:10px 0">${podium.third.name}</h3>
+                                        <p style="color:#6f2c91">${podium.third.wins} victorias</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="padel-card">
+                                <h2 class="text-center" style="color:#6f2c91;font-size:1.8rem;font-weight:bold;margin-bottom:20px">
+                                    📊 Clasificación Final
+                                </h2>
+                                <table class="leaderboard-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Posición</th>
+                                            <th>Jugador</th>
+                                            <th style="text-align:center">Ganados</th>
+                                            <th style="text-align:center">Perdidos</th>
+                                            <th style="text-align:center">Puntos +</th>
+                                            <th style="text-align:center">Puntos -</th>
+                                            <th style="text-align:center">Diferencia</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.leaderboard.map(player => `
+                                            <tr ${player.rank <= 3 ? 'style="background-color:#fff3cd"' : ''}>
+                                                <td>
+                                                    <span class="rank-${player.rank}">
+                                                        ${this.getRankIcon(player.rank)}
+                                                    </span>
+                                                </td>
+                                                <td style="font-weight:bold;color:#6f2c91">${player.name}</td>
+                                                <td style="text-align:center;color:#00a650;font-weight:bold">${player.wins}</td>
+                                                <td style="text-align:center;color:#d63384">${player.losses}</td>
+                                                <td style="text-align:center;color:#6f2c91">${player.pointsFor}</td>
+                                                <td style="text-align:center;color:#6f2c91">${player.pointsAgainst}</td>
+                                                <td style="text-align:center;font-weight:bold;color:${player.pointDifference >= 0 ? '#00a650' : '#d63384'}">
+                                                    ${player.pointDifference > 0 ? '+' : ''}${player.pointDifference}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="flex-center" style="gap:20px">
+                                <button class="padel-button btn-secondary" 
+                                        style="padding:15px 30px;font-size:18px" 
+                                        onclick="padelApp.playAgain()">
+                                    🔄 Jugar de Nuevo
+                                </button>
+                                <button class="padel-button btn-primary" 
+                                        style="padding:15px 30px;font-size:18px" 
+                                        onclick="padelApp.newTournament()">
+                                    Nuevo Torneo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Inicializar la aplicación
+        let padelApp;
+        document.addEventListener('DOMContentLoaded', function() { 
+            padelApp = new PadelAmericano(); 
+        });
+    </script>
 </body>
 </html>
