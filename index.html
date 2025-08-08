@@ -503,6 +503,7 @@
                 this.rounds = [];
                 this.currentRound = 0;
                 this.leaderboard = [];
+                this.restsByRound = [];
                 // TIMER PROPERTIES
                 this.timerMinutes = 10;
                 this.timerSeconds = 600;
@@ -525,6 +526,7 @@
                         rounds: this.rounds,
                         currentRound: this.currentRound,
                         leaderboard: this.leaderboard,
+                        restsByRound: this.restsByRound,
                         timerMinutes: this.timerMinutes,
                         timerSeconds: this.timerSeconds,
                         isTimerRunning: this.isTimerRunning
@@ -545,6 +547,7 @@
                         this.rounds = state.rounds || [];
                         this.currentRound = state.currentRound || 0;
                         this.leaderboard = state.leaderboard || [];
+                        this.restsByRound = state.restsByRound || [];
                         this.timerMinutes = state.timerMinutes || 10;
                         this.timerSeconds = state.timerSeconds || 600;
                         this.isTimerRunning = state.isTimerRunning || false;
@@ -945,7 +948,26 @@
             }
 
             updateCourts(value) { 
-                this.numCourts = parseInt(value) || 0; 
+                const requested = parseInt(value) || 0;
+                const validCount = this.players.filter(p => p.trim() !== '').length;
+                const allowed = this.getAllowedCourtsForPlayers(validCount);
+                if (allowed.length === 0) {
+                    this.numCourts = 0;
+                } else if (allowed.includes(requested)) {
+                    this.numCourts = requested;
+                } else {
+                    // Elegir el permitido más cercano
+                    let nearest = allowed[0];
+                    let bestDiff = Math.abs(requested - nearest);
+                    for (let i = 1; i < allowed.length; i++) {
+                        const d = Math.abs(requested - allowed[i]);
+                        if (d < bestDiff || (d === bestDiff && allowed[i] < nearest)) {
+                            nearest = allowed[i];
+                            bestDiff = d;
+                        }
+                    }
+                    this.numCourts = nearest;
+                }
                 this.saveState();
                 this.render(); 
             }
@@ -953,63 +975,109 @@
             // Nueva función para ajustar automáticamente las canchas según jugadores
             adjustCourtsForPlayers() {
                 const validCount = this.players.filter(p => p.trim() !== '').length;
-                
-                // Si hay 4-7 jugadores, forzar 1 cancha
-                if (validCount >= 4 && validCount <= 7) {
-                    if (this.numCourts !== 1) {
-                        this.numCourts = 1;
-                        this.saveState();
-                    }
-                }
-                // Si hay 8+ jugadores, permitir más canchas pero mínimo 1
-                else if (validCount >= 8) {
-                    if (this.numCourts < 1) {
-                        this.numCourts = 1;
-                        this.saveState();
-                    }
+                const allowed = this.getAllowedCourtsForPlayers(validCount);
+                if (allowed.length === 0) return;
+                if (!allowed.includes(this.numCourts)) {
+                    this.numCourts = allowed[0];
+                    this.saveState();
                 }
             }
 
+            // 1-factorización (Circle Method) con GHOST
+            generateCompleteSchedule(players) {
+                let n = players.length;
+                const working = players.slice();
+                const hasGhost = (n % 2 === 1);
+                if (hasGhost) { working.push('GHOST'); n += 1; }
+                const numRounds = n - 1;
+                const rounds = [];
+                let state = working.slice();
+
+                for (let r = 0; r < numRounds; r++) {
+                    const roundPairs = [];
+                    for (let i = 0; i < n / 2; i++) {
+                        const p1 = state[i];
+                        const p2 = state[n - 1 - i];
+                        if (p1 !== 'GHOST' && p2 !== 'GHOST') roundPairs.push([p1, p2]);
+                    }
+                    // Rotación: fijo el primero, último pasa a segunda posición
+                    state = [state[0], state[n - 1], ...state.slice(1, n - 1)];
+                    rounds.push(roundPairs);
+                }
+                return rounds;
+            }
+
+            // Canchas permitidas por cantidad de jugadores
+            getAllowedCourtsForPlayers(n) {
+                if (n >= 4 && n <= 7) return [1];
+                if (n >= 8 && n <= 11) return [1, 2];
+                if (n === 12) return [1, 2, 3];
+                if (n >= 13 && n <= 15) return [2, 3];
+                return [];
+            }
+
+            // Helpers de capacidad por ronda (según reglas rápidas)
+            getPairsPerRound(n) { return (n % 2 === 0) ? (n / 2) : ((n - 1) / 2); }
+            getMatchesPerRound(n, courts) {
+                const pairs = this.getPairsPerRound(n);
+                const maxMatchesByPairs = Math.floor(pairs / 2);
+                const allowedCourts = Math.max(1, courts | 0);
+                return Math.min(allowedCourts, maxMatchesByPairs);
+            }
+            getMaxActivePlayers(n) { return (n % 2 === 0) ? n : (n - 1); }
+            getActivePlayersAndRests(n, courts) {
+                const matches = this.getMatchesPerRound(n, courts);
+                const active = Math.min(4 * matches, this.getMaxActivePlayers(n));
+                const rests = Math.max(0, n - active);
+                return { active, rests, matches };
+            }
+
+            // Construir torneo: emparejar parejas en partidos y limitar por canchas
             generateTournament(playerList, courts) {
-                const validPlayers = [...playerList];
+                const validPlayers = playerList.map(p => p.trim()).filter(Boolean);
                 const n = validPlayers.length;
-                if (n < 4 || n % 2 !== 0) return [];
-                const roundsCount = n - 1;
+                if (n < 4) return [];
+
+                const base = this.generateCompleteSchedule(validPlayers);
+                // Para N impar: usar solo N-1 rondas (no N)
+                const roundsToUse = Math.max(0, n - 1);
+                const total = Math.min(roundsToUse, base.length);
                 const allRounds = [];
-                const fixedPlayer = validPlayers.pop();
-                
-                for (let r = 0; r < roundsCount; r++) {
+                const rests = [];
+                for (let r = 0; r < total; r++) {
+                    const roundPairs = base[r];
                     const roundMatches = [];
-                    const pairings = [];
-                    pairings.push([fixedPlayer, validPlayers[r]]);
-                    
-                    for (let i = 1; i < n / 2; i++) {
-                        const p1_index = (r + i) % (n - 1);
-                        const p2_index = (r - i + (n - 1)) % (n - 1);
-                        pairings.push([validPlayers[p1_index], validPlayers[p2_index]]);
+                    let court = 1;
+                    for (let i = 0; i + 1 < roundPairs.length && court <= courts; i += 2, court++) {
+                        const [t1p1, t1p2] = roundPairs[i];
+                        const [t2p1, t2p2] = roundPairs[i + 1];
+                        roundMatches.push({
+                            team1: [t1p1, t1p2],
+                            team2: [t2p1, t2p2],
+                            court: court,
+                            score1: '',
+                            score2: '',
+                            finished: false,
+                        });
                     }
-                    
-                    for (let i = 0; i < pairings.length; i += 2) {
-                        if (i + 1 < pairings.length) {
-                            roundMatches.push({
-                                team1: pairings[i],
-                                team2: pairings[i + 1],
-                                court: (Math.floor(i / 2) % courts) + 1,
-                                score1: '', 
-                                score2: '', 
-                                finished: false,
-                            });
-                        }
-                    }
+                    // Calcular quién descansa realmente: jugadores que no aparecen en los partidos programados (limitados por canchas)
+                    const playingSet = new Set();
+                    roundMatches.forEach(m => {
+                        m.team1.forEach(p => playingSet.add(p));
+                        m.team2.forEach(p => playingSet.add(p));
+                    });
+                    const resting = validPlayers.filter(p => !playingSet.has(p));
+                    rests.push(resting);
                     allRounds.push(roundMatches);
                 }
+                this.restsByRound = rests;
                 return allRounds;
             }
 
             startTournament() {
                 const validPlayers = this.players.filter(p => p.trim() !== '').map(p => p.trim());
-                if (validPlayers.length < 4 || validPlayers.length % 2 !== 0) { 
-                    alert("Necesitas un número par de jugadores, mínimo 4"); 
+                if (validPlayers.length < 4) { 
+                    alert("Necesitas al menos 4 jugadores"); 
                     return; 
                 }
                 if (this.numCourts < 1) { 
@@ -1178,7 +1246,7 @@
 
             renderSetup(app) {
                 const validCount = this.players.filter(p => p.trim() !== '').length;
-                const isValid = validCount >= 4 && validCount % 2 === 0 && this.numCourts >= 1;
+                const isValid = validCount >= 4 && this.numCourts >= 1;
                 
 
                 
@@ -1247,14 +1315,25 @@
                                     
                                     <div style="background:#f8f9fa;border-left:4px solid #00a650;padding:15px;border-radius:8px;margin-bottom:20px">
                                         <h3 style="color:#6f2c91;font-weight:bold;margin-bottom:10px">🏆 Torneo Americano:</h3>
-                                        <ul style="color:#6f2c91;font-size:14px;line-height:1.6">
-                                            <li>• Jugadores válidos: <strong>${validCount}</strong></li>
-                                            <li>• Canchas: <strong>${this.numCourts}</strong></li>
-                                            <li>• Rondas necesarias: <strong>${isValid ? validCount - 1 : 0}</strong></li>
-                                            <li>• Partidos por ronda: <strong>${isValid ? Math.floor(validCount / 4) : 0}</strong></li>
-                                            <li>• Cada jugador juega con todos como compañero</li>
-                                            <li>• Cada jugador se enfrenta a todos como rival</li>
-                                        </ul>
+                                        ${(() => {
+                                            const roundsNeeded = isValid ? (validCount - 1) : 0;
+                                            const pairsPerRound = isValid ? this.getPairsPerRound(validCount) : 0;
+                                            const maxMatchesPerRound = isValid ? this.getMatchesPerRound(validCount, this.numCourts) : 0;
+                                            const cap = isValid ? this.getActivePlayersAndRests(validCount, this.numCourts) : {active:0, rests:0};
+                                            const imparInfo = (validCount % 2 === 1 && validCount >= 4) ? '<li>• Con número impar, cada ronda descansa 1 jugador</li>' : '';
+                                            return `
+                                                <ul style="color:#6f2c91;font-size:14px;line-height:1.6">
+                                                    <li>• Jugadores válidos: <strong>${validCount}</strong></li>
+                                                    <li>• Canchas: <strong>${this.numCourts}</strong></li>
+                                                    <li>• Rondas necesarias: <strong>${roundsNeeded}</strong></li>
+                                                    <li>• Partidos por ronda (máx.): <strong>${maxMatchesPerRound}</strong></li>
+                                                    <li>• Juegan por ronda: <strong>${cap.active}</strong></li>
+                                                    <li>• Descansan por ronda: <strong>${cap.rests}</strong></li>
+                                                    <li>• Sin repetir compañero a lo largo del torneo</li>
+                                                    ${imparInfo}
+                                                </ul>
+                                            `;
+                                        })()}
                                     </div>
                                     
                                     <button class="padel-button btn-primary" 
@@ -1272,6 +1351,7 @@
 
             renderPlaying(app) {
                 const currentMatches = this.rounds[this.currentRound] || [];
+                const restingPlayers = (this.restsByRound && this.restsByRound[this.currentRound]) ? this.restsByRound[this.currentRound] : [];
                 
                 app.innerHTML = `
                     <div class="padel-container">
@@ -1341,6 +1421,13 @@
                                     </button>
                                 </div>
                             </div>
+                            ${restingPlayers && restingPlayers.length>0 ? `
+                                <div class="padel-card" style="border-color:#ffc107">
+                                    <div class="text-center" style="color:#6f2c91;font-weight:bold">
+                                        💤 Descansa: ${restingPlayers.join(', ')}
+                                    </div>
+                                </div>
+                            ` : ''}
                             
                             ${currentMatches.map((match, matchIndex) => `
                                 <div class="padel-card">
