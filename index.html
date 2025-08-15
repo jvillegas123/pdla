@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -481,16 +482,10 @@
         }
 
         function getInstallDismissed() {
-            try {
-                const v = localStorage.getItem('padelInstallDismissed');
-                if (v === 'true') return true;
-                if (v === 'false') return false;
-            } catch (_) { /* ignore */ }
             return window.installDismissed || false;
         }
 
         function setInstallDismissed(value) {
-            try { localStorage.setItem('padelInstallDismissed', value ? 'true' : 'false'); } catch (_) { /* ignore */ }
             window.installDismissed = value;
         }
         
@@ -515,7 +510,6 @@
                 this.timerSeconds = 600;
                 this.timerInterval = null;
                 this.isTimerRunning = false;
-                this.lastTickEpochMs = null; // marca de tiempo del último tick para reanudar tras recarga
                 this.init();
             }
 
@@ -527,7 +521,6 @@
             saveState() {
                 try {
                     const state = {
-                        schemaVersion: 1,
                         stage: this.stage,
                         players: this.players,
                         numCourts: this.numCourts,
@@ -537,13 +530,9 @@
                         restsByRound: this.restsByRound,
                         timerMinutes: this.timerMinutes,
                         timerSeconds: this.timerSeconds,
-                        isTimerRunning: this.isTimerRunning,
-                        lastTickEpochMs: this.lastTickEpochMs
+                        isTimerRunning: this.isTimerRunning
                     };
                     window.padelState = state;
-                    try {
-                        localStorage.setItem('padelState', JSON.stringify(state));
-                    } catch (_) { /* almacenamiento puede fallar en modo privado */ }
                 } catch (e) {
                     console.log('No se pudo guardar el estado');
                 }
@@ -551,52 +540,19 @@
 
             loadState() {
                 try {
-                    let stored = null;
-                    try {
-                        const raw = localStorage.getItem('padelState');
-                        stored = raw ? JSON.parse(raw) : null;
-                    } catch (_) { /* ignorar */ }
-                    const state = stored || window.padelState;
+                    const state = window.padelState;
                     if (state) {
-                        this.stage = state.stage ?? 'setup';
-                        this.players = Array.isArray(state.players) ? state.players : ['', '', '', '', '', '', '', ''];
-                        this.numCourts = (typeof state.numCourts === 'number') ? state.numCourts : 0;
-                        this.rounds = Array.isArray(state.rounds) ? state.rounds : [];
-                        this.currentRound = (typeof state.currentRound === 'number') ? state.currentRound : 0;
-                        this.leaderboard = Array.isArray(state.leaderboard) ? state.leaderboard : [];
-                        this.restsByRound = Array.isArray(state.restsByRound) ? state.restsByRound : [];
-                        this.timerMinutes = (typeof state.timerMinutes === 'number') ? state.timerMinutes : 10;
-                        this.timerSeconds = (typeof state.timerSeconds === 'number') ? state.timerSeconds : 600;
-                        this.isTimerRunning = !!state.isTimerRunning;
-                        this.lastTickEpochMs = (typeof state.lastTickEpochMs === 'number') ? state.lastTickEpochMs : null;
+                        this.stage = state.stage || 'setup';
+                        this.players = state.players || ['', '', '', '', '', '', '', ''];
+                        this.numCourts = state.numCourts || 0;
+                        this.rounds = state.rounds || [];
+                        this.currentRound = state.currentRound || 0;
+                        this.leaderboard = state.leaderboard || [];
+                        this.restsByRound = state.restsByRound || [];
+                        this.timerMinutes = state.timerMinutes || 10;
+                        this.timerSeconds = state.timerSeconds || 600;
+                        this.isTimerRunning = state.isTimerRunning || false;
                         this.adjustCourtsForPlayers();
-
-                        // Recalcular clasificación para coherencia
-                        if (this.rounds && this.rounds.length) {
-                            this.calculateLeaderboard();
-                        }
-
-                        // Reanudar temporizador si estaba corriendo
-                        if (this.isTimerRunning) {
-                            const now = Date.now();
-                            const last = this.lastTickEpochMs || now;
-                            const elapsed = Math.max(0, Math.floor((now - last) / 1000));
-                            const remaining = Math.max(0, (this.timerSeconds | 0) - elapsed);
-                            this.timerSeconds = remaining;
-                            if (remaining === 0) {
-                                // Marcar como no corriendo y finalizar
-                                this.isTimerRunning = false;
-                                this.saveState();
-                                // Ejecutar lógica de fin de tiempo
-                                this.timerFinished();
-                            } else {
-                                // Reanudar intervalo
-                                this.lastTickEpochMs = now;
-                                // Forzar arranque del intervalo respetando flag
-                                this.isTimerRunning = false;
-                                this.startTimer();
-                            }
-                        }
                     }
                 } catch (e) {
                     console.log('No se pudo cargar el estado');
@@ -735,13 +691,11 @@
                 if (this.isTimerRunning) return;
                 
                 this.isTimerRunning = true;
-                this.lastTickEpochMs = Date.now();
                 this.saveState();
                 
                 this.timerInterval = setInterval(() => {
                     if (this.timerSeconds > 0) {
                         this.timerSeconds--;
-                        this.lastTickEpochMs = Date.now();
                         
                         // Beep de advertencia en los últimos 10 segundos (solo si audio está activado)
                         if (this.timerSeconds <= 10 && this.timerSeconds > 0 && this.audioActivated) {
@@ -804,7 +758,6 @@
                     clearInterval(this.timerInterval);
                     this.timerInterval = null;
                 }
-                this.lastTickEpochMs = null;
                 this.saveState();
                 this.render();
             }
@@ -816,7 +769,6 @@
                     this.timerInterval = null;
                 }
                 this.timerSeconds = this.timerMinutes * 60;
-                this.lastTickEpochMs = null;
                 this.saveState();
                 this.render();
             }
@@ -1696,10 +1648,6 @@
         let padelApp;
         document.addEventListener('DOMContentLoaded', function() { 
             padelApp = new PadelAmericano(); 
-            // Guardado de seguridad al cerrar o recargar
-            window.addEventListener('beforeunload', function() {
-                try { padelApp && padelApp.saveState(); } catch (_) {}
-            });
         });
     </script>
 </body>
